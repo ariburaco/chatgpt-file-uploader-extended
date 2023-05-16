@@ -35,7 +35,7 @@ This is a Chrome extension developed using React, TypeScript, and Vite. The exte
 
 Clone the repository:
 
-`git clone https://github.com/ariburaco/chat-gpt-file-chunk.git`
+`git clone https://github.com/ariburaco/chatgpt-file-uploader`
 
 Navigate to the project directory: cd file-uploader-extension
 -Install dependencies: pnpm install
