@@ -2,9 +2,36 @@ import * as PDFJS from "pdfjs-dist";
 import { getDocument } from "pdfjs-dist";
 import { useEffect, useRef, useState } from "react";
 import JSZip from "jszip";
-import { read, writeFileXLSX, utils } from "xlsx";
+import { read, utils } from "xlsx";
 
 PDFJS.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS.version}/pdf.worker.js`;
+
+export const blacklist = ["package-lock.json", "pnpm-lock.yaml", "yarn.lock"];
+export const ignoreExtensions = [
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".svg",
+  ".ico",
+  ".woff",
+  ".woff2",
+  ".ttf",
+  ".eot",
+  ".mp4",
+  ".mp3",
+  ".wav",
+  ".ogg",
+  ".webm",
+  ".zip",
+  ".tar.gz",
+  ".rar",
+  ".7z",
+  ".yarnrc",
+  ".yml",
+  ".yaml",
+  ".log",
+];
 
 export default function App() {
   const [file, setFile] = useState<File | null>(null);
@@ -44,6 +71,9 @@ export default function App() {
     ) {
       const fileContent = await readExcelFile(file);
       await handleFileContent(fileContent);
+    } else if (file.type === "application/zip") {
+      const fileContent = await readFilesFromZIPFile(file);
+      await handleFileContent(fileContent);
     } else {
       const fileContent = await readFileAsText(file);
       await handleFileContent(fileContent);
@@ -58,7 +88,7 @@ export default function App() {
         const zip = await JSZip.loadAsync(arrayBuffer);
         const content = await zip.file("word/document.xml")?.async("text");
         if (content) {
-          const extractedText = await extractTextFromWordXML(content);
+          const extractedText = extractTextFromWordXML(content);
           resolve(extractedText);
         } else {
           reject("Failed to read Word file content");
@@ -70,6 +100,57 @@ export default function App() {
       reader.readAsArrayBuffer(file);
     });
   }
+
+  const readZIPFileAsArrayBuffer = (file: File): Promise<ArrayBuffer> => {
+    return new Promise<ArrayBuffer>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event: ProgressEvent<FileReader>) => {
+        const arrayBuffer = event.target?.result as ArrayBuffer;
+        resolve(arrayBuffer);
+      };
+      reader.onerror = (event: ProgressEvent<FileReader>) => {
+        reject(event.target?.error);
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  const readFilesFromZIPFile = async (zipFile: File): Promise<string> => {
+    const files = new Map<string, string>();
+    const zipData = await readZIPFileAsArrayBuffer(zipFile);
+    const zip = await JSZip.loadAsync(zipData);
+
+    await Promise.all(
+      Object.values(zip.files).map(async (file) => {
+        const fileName = file.name;
+
+        const fileExtension =
+          "." + fileName.split(".").pop()?.toLowerCase() || "";
+
+        if (
+          !file.dir &&
+          !blacklist.includes(fileName) &&
+          !ignoreExtensions.includes(fileExtension)
+        ) {
+          const fileContent = await file.async("string");
+
+          // skip if the file content is larger than 1MB
+          if (fileContent.length < 1000000) {
+            files.set(file.name, fileContent);
+          }
+        }
+      })
+    );
+
+    let outputText = "";
+
+    for (const [filePath, fileContent] of files.entries()) {
+      outputText += `\nFile: ${filePath}/\n`;
+      outputText += `${fileContent}\n\n`;
+    }
+
+    return outputText;
+  };
 
   function extractTextFromWordXML(xmlContent: string) {
     const parser = new DOMParser();
@@ -280,7 +361,7 @@ ${text}`;
           ref={fileInputRef}
           style={{ display: "none" }}
           onChange={onFileChange}
-          accept=".txt,.js,.py,.html,.css,.json,.csv,.md,.ts,.tsx,.jsx,.pdf,.doc,.docx,.xls,.xlsx"
+          accept=".txt,.js,.py,.html,.css,.json,.csv,.md,.ts,.tsx,.jsx,.pdf,.doc,.docx,.xls,.xlsx,.zip"
         />
         <label className="text-white text-sm">Chunk Size</label>
         <input
@@ -306,7 +387,7 @@ ${text}`;
         Supported file types:{" "}
         <span className="text-gray-500 dark:text-gray-500">
           .txt, .js, .py, .html, .css, .json, .csv, .md, .ts, .tsx, .jsx, .pdf,
-          .doc, .docx, .xls, .xlsx
+          .doc, .docx, .xls, .xlsx and .zip
         </span>
       </span>
     </div>

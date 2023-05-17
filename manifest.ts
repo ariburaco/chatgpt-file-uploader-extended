@@ -5,15 +5,6 @@ const manifest: chrome.runtime.ManifestV3 = {
   name: "ChatGPT File Uploader Extended",
   version: packageJson.version,
   description: packageJson.description,
-  // background: { service_worker: "src/pages/background/index.js" },
-  // action: {
-  //   default_popup: "src/pages/popup/index.html",
-  //   default_title: "SnapAnswers",
-  //   default_icon: "icon-34.png",
-  // },
-  // chrome_url_overrides: {
-  //   newtab: "src/pages/newtab/index.html",
-  // },
   icons: {
     "128": "icon-128.png",
     "34": "icon-34.png",
@@ -36,7 +27,6 @@ const manifest: chrome.runtime.ManifestV3 = {
       matches: ["https://chat.openai.com/*"],
     },
   ],
-  permissions: ["activeTab", "scripting"],
 };
 
 export default manifest;

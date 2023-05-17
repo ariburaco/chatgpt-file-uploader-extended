@@ -4,7 +4,7 @@
     "baseUrl": ".",
     "allowJs": false,
     "strict": true,
-    "target": "esnext",
+    "target": "ES2020",
     "module": "esnext",
     "jsx": "react-jsx",
     "skipLibCheck": true,
@@ -14,7 +14,7 @@
     "types": ["vite/client", "node"],
     "noFallthroughCasesInSwitch": true,
     "allowSyntheticDefaultImports": true,
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": ["dom", "dom.iterable", "esnext", "es2017"],
     "forceConsistentCasingInFileNames": true,
     "typeRoots": ["./src/global.d.ts"],
     "paths": {
