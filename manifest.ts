@@ -27,6 +27,7 @@ const manifest: chrome.runtime.ManifestV3 = {
       matches: ["https://chat.openai.com/*"],
     },
   ],
+  permissions: ["storage"],
 };
 
 export default manifest;

@@ -1,6 +1,6 @@
 <div align="center">
 <img src="public/icon-128.png" alt="logo"/>
-<h1> ChatGPT File Uploader</h1>  
+<h1> ChatGPT File Uploader Extended</h1>  
 <h2>Chrome Extension Boilerplate with<br/>React + Vite + TypeScript <h2>
 
 ![](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black)

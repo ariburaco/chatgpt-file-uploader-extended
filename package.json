@@ -1,7 +1,7 @@
 {
   "name": "chatgpt-file-uploader",
-  "version": "1.0.2",
-  "description": "ChatGPT File Uploader",
+  "version": "1.1.0",
+  "description": "ChatGPT File Uploader Extended",
   "license": "MIT",
   "scripts": {
     "build": "tsc --noEmit && vite build",
@@ -12,6 +12,8 @@
   },
   "type": "module",
   "dependencies": {
+    "@headlessui/react": "^1.7.14",
+    "classnames": "^2.3.2",
     "jszip": "^3.10.1",
     "pdfjs-dist": "^3.6.172",
     "postcss": "^8.4.21",
