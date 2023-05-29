@@ -11,7 +11,7 @@ const manifest: chrome.runtime.ManifestV3 = {
   },
   content_scripts: [
     {
-      matches: ["https://chat.openai.com/*"],
+      matches: ["https://chat.openai.com/*", "https://chat.zhile.io/*"],
       js: ["src/pages/content/index.js"],
       css: ["assets/css/contentStyle.chunk.css"],
     },
@@ -24,7 +24,7 @@ const manifest: chrome.runtime.ManifestV3 = {
         "icon-128.png",
         "icon-34.png",
       ],
-      matches: ["https://chat.openai.com/*"],
+      matches: ["https://chat.openai.com/*", "https://chat.zhile.io/*"],
     },
   ],
   permissions: ["storage"],
