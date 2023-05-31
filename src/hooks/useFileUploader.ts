@@ -1,8 +1,5 @@
-import JSZip from "jszip";
-import { getDocument } from "pdfjs-dist";
-import { useState, useRef, useEffect } from "react";
-import { read, utils } from "xlsx";
-import * as PDFJS from "pdfjs-dist";
+/* eslint-disable no-case-declarations */
+import { getFromLocalStorage, saveToLocalStorage } from "@src/helpers";
 import {
   BASE_PROMPT,
   LAST_PART_PROMPT,
@@ -11,7 +8,11 @@ import {
   ZIP_BLACKLIST,
   ZIP_IGNORE_EXTENSION,
 } from "@src/helpers/constants";
-import { getFromLocalStorage, saveToLocalStorage } from "@src/helpers";
+import JSZip from "jszip";
+import * as PDFJS from "pdfjs-dist";
+import { getDocument } from "pdfjs-dist";
+import { useEffect, useRef, useState } from "react";
+import { read, utils } from "xlsx";
 PDFJS.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS.version}/pdf.worker.js`;
 
 const useFileUploader = () => {
@@ -157,13 +158,15 @@ const useFileUploader = () => {
     }
   }
 
-  function readWordFile(file: File): Promise<string> {
+  function readWordFile(file: File | Blob): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = async (event: ProgressEvent<FileReader>) => {
         const arrayBuffer = event.target?.result as ArrayBuffer;
         const zip = await JSZip.loadAsync(arrayBuffer);
+
         const content = await zip.file("word/document.xml")?.async("text");
+
         if (content) {
           const extractedText = extractTextFromWordXML(content);
           resolve(extractedText);
@@ -197,7 +200,7 @@ const useFileUploader = () => {
     const zipData = await readZIPFileAsArrayBuffer(zipFile);
     const zip = await JSZip.loadAsync(zipData);
 
-    await Promise.all(
+    await Promise.allSettled(
       Object.values(zip.files).map(async (file) => {
         const fileName = file.name;
 
@@ -206,15 +209,23 @@ const useFileUploader = () => {
 
         if (
           !file.dir &&
+          !fileName.startsWith("__MACOSX/") &&
           !blacklist.includes(fileName) &&
           !ignoreExtensions.includes(fileExtension)
         ) {
-          const fileContent = await file.async("string");
-
-          // skip if the file content is larger than 1MB
-          if (fileContent.length < 1000000) {
-            files.set(file.name, fileContent);
+          let fileContent = "";
+          const fileContentArrayBuffer = await file.async("arraybuffer");
+          const fileContentAsBlob = new Blob([fileContentArrayBuffer]);
+          if (fileExtension === ".pdf") {
+            fileContent = await readPdfFile(fileContentAsBlob);
+          } else if (fileExtension === ".docx") {
+            fileContent = await readWordFile(fileContentAsBlob);
+          } else if (fileExtension === ".xlsx") {
+            fileContent = await readExcelFile(fileContentAsBlob);
+          } else {
+            fileContent = await file.async("string");
           }
+          files.set(file.name, fileContent);
         }
       })
     );
@@ -230,19 +241,24 @@ const useFileUploader = () => {
   };
 
   function extractTextFromWordXML(xmlContent: string) {
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlContent, "text/xml");
-    const textNodes = xmlDoc.getElementsByTagName("w:t");
-    let extractedText = "";
+    try {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlContent, "text/xml");
+      const textNodes = xmlDoc.getElementsByTagName("w:t");
+      let extractedText = "";
 
-    for (let i = 0; i < textNodes.length; i++) {
-      extractedText += textNodes[i].textContent + " \n";
+      for (let i = 0; i < textNodes.length; i++) {
+        extractedText += textNodes[i].textContent + " \n";
+      }
+
+      return extractedText;
+    } catch (error) {
+      console.error(error);
+      return "";
     }
-
-    return extractedText;
   }
 
-  function readExcelFile(file: File): Promise<string> {
+  function readExcelFile(file: File | Blob): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = async (event: ProgressEvent<FileReader>) => {
@@ -284,7 +300,7 @@ const useFileUploader = () => {
     return extractedText;
   }
 
-  const readPdfFile = async (file: File): Promise<string> => {
+  const readPdfFile = async (file: File | Blob): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = async (event: ProgressEvent<FileReader>) => {
@@ -292,6 +308,7 @@ const useFileUploader = () => {
           try {
             const pdf = await getDocument({ data: event.target.result })
               .promise;
+
             let textContent = "";
             for (let i = 1; i <= pdf.numPages; i++) {
               try {
@@ -307,6 +324,7 @@ const useFileUploader = () => {
                 continue;
               }
             }
+
             resolve(textContent);
           } catch (error) {
             reject(`Error occurred while reading PDF file: ${error}`);
@@ -328,16 +346,13 @@ const useFileUploader = () => {
     done: boolean,
     totalParts: number
   ) {
-    const textarea = document.querySelector("textarea[tabindex='0']");
+    const textarea = document.getElementById(
+      "prompt-textarea"
+    ) as HTMLTextAreaElement;
+
     if (!textarea) {
       return;
     }
-
-    const enterKeyEvent = new KeyboardEvent("keydown", {
-      bubbles: true,
-      cancelable: true,
-      keyCode: 13,
-    });
 
     const splittedPrompt = `${part === 1 ? basePrompt : ""}
 ${part === 1 ? multipleFilesPrompt : "This is the next part of the file"}`;
@@ -363,36 +378,68 @@ ${promptPart}
 "${promptText}"
 `;
 
-    // @ts-ignore
     textarea.value = prompt;
-    textarea.dispatchEvent(enterKeyEvent);
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const sendButton = textarea.nextElementSibling as HTMLButtonElement;
+    if (!sendButton) {
+      console.log("Send button not found");
+      return;
+    }
+    sendButton.disabled = false;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    sendButton.click();
+    sendButton.disabled = true;
   }
+
+  const isStopRequestedRef = useRef(false);
+  const [isStopRequested, setIsStopRequested] = useState(false);
+
+  useEffect(() => {
+    isStopRequestedRef.current = isStopRequested;
+  }, [isStopRequested]);
 
   const handleFileContent = async (fileContent: string) => {
     const numChunks = Math.ceil(fileContent.length / chunkSize);
     setTotalParts(numChunks);
     setIsSubmitting(true);
-    for (let i = 0; i < numChunks; i++) {
-      const start = i * chunkSize;
-      const end = start + chunkSize;
-      const chunk = fileContent.slice(start, end);
-      const part = i + 1;
-      // Submit chunk to conversation
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      await submitConversation(chunk, part, i === numChunks - 1, numChunks);
-      let chatgptReady = false;
-      setCurrentPart(part);
-      while (!chatgptReady) {
+    setIsStopRequested(false);
+
+    async function processChunk(i: number) {
+      if (i < numChunks && !isStopRequestedRef.current) {
+        const start = i * chunkSize;
+        const end = start + chunkSize;
+        const chunk = fileContent.slice(start, end);
+        const part = i + 1;
+        // Submit chunk to conversation
         await new Promise((resolve) => setTimeout(resolve, 1000));
-        console.log("Waiting for chatgpt to be ready...");
-        chatgptReady = !document.querySelector(
-          ".text-2xl > span:not(.invisible)"
-        );
+        await submitConversation(chunk, part, i === numChunks - 1, numChunks);
+
+        setCurrentPart(part);
+        let chatgptReady = false;
+        while (!chatgptReady && !isStopRequestedRef.current) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          console.log("Waiting for chatgpt to be ready...");
+          chatgptReady = !document.querySelector(
+            ".text-2xl > span:not(.invisible)"
+          );
+
+          if (isStopRequestedRef.current) {
+            break;
+          }
+        }
+
+        if (!isStopRequestedRef.current) {
+          processChunk(i + 1); // Process the next chunk
+        }
+      } else {
+        setIsSubmitting(false);
+        setFile(null);
+        setFileName("");
       }
     }
-    setIsSubmitting(false);
-    setFile(null);
-    setFileName("");
+
+    processChunk(0); // Start the process with the first chunk
   };
 
   const readFileAsText = async (file: File): Promise<string> => {
@@ -418,6 +465,7 @@ ${promptPart}
       setFileName(selectedFile.name);
       setFile(selectedFile);
     }
+    event.target.value = "";
   };
 
   const onUploadButtonClick = () => {
@@ -430,6 +478,14 @@ ${promptPart}
     await saveToLocalStorage("chatGPTFileUploader_chunkSize", value.toString());
     setChunkSize(value);
   }
+
+  useEffect(() => {
+    if (isStopRequested) {
+      setIsSubmitting(false);
+      setFile(null);
+      setFileName("");
+    }
+  }, [isStopRequested]);
 
   return {
     file,
@@ -456,6 +512,7 @@ ${promptPart}
     setIgnoreExtensions,
     setBlacklist,
     updateBlackListAndIgnoreExtensions,
+    setIsStopRequested,
   };
 };
 

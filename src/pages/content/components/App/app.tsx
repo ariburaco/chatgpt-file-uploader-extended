@@ -26,6 +26,7 @@ export default function App() {
     setBlacklist,
     setIgnoreExtensions,
     updateBlackListAndIgnoreExtensions,
+    setIsStopRequested,
   } = useFileUploader();
 
   return (
@@ -75,6 +76,15 @@ export default function App() {
           >
             Upload File
           </button>
+          {isSubmitting && (
+            <button
+              className="text-white rounded-md w-fit hover:opacity-80 transition-all bg-red-500"
+              onClick={() => setIsStopRequested(true)}
+              style={{ height: "40px", padding: "0 20px" }}
+            >
+              Stop Upload
+            </button>
+          )}
         </div>
       </div>
       {isSubmitting && (
