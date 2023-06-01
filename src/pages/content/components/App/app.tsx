@@ -1,6 +1,7 @@
 import useFileUploader from "@src/hooks/useFileUploader";
 import ProgressBar from "../ProgressBar";
 import Settings from "../Settings";
+import { ACCEPTED_FILE_TYPES } from "@src/helpers/constants";
 
 export default function App() {
   const {
@@ -40,7 +41,7 @@ export default function App() {
           ref={fileInputRef}
           style={{ display: "none" }}
           onChange={onFileChange}
-          accept=".txt,.js,.py,.html,.css,.json,.csv,.md,.ts,.tsx,.jsx,.pdf,.doc,.docx,.xls,.xlsx,.zip"
+          accept={ACCEPTED_FILE_TYPES.join(", ")}
         />
         <span className="text-gray-600 dark:text-gray-300 text-sm">
           Chunk Size: {chunkSize} characters
@@ -95,14 +96,6 @@ export default function App() {
           </span>
         </div>
       )}
-
-      <span className="hidden sm:block text-gray-600 dark:text-gray-300 text-xs">
-        Supported file types:{" "}
-        <span className="text-gray-500 dark:text-gray-500">
-          .txt, .js, .py, .html, .css, .json, .csv, .md, .ts, .tsx, .jsx, .pdf,
-          .doc, .docx, .xls, .xlsx and .zip
-        </span>
-      </span>
     </div>
   );
 }

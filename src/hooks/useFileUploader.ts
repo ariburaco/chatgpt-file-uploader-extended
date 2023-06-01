@@ -1,7 +1,11 @@
 /* eslint-disable no-case-declarations */
 import { getFromLocalStorage, saveToLocalStorage } from "@src/helpers";
+import OCRImage from "@src/helpers/OCRImage";
 import {
   BASE_PROMPT,
+  DEFAULT_CHUNCK_SIZE,
+  IMAGE_FILE_EXTENSIONS,
+  IMAGE_FILE_TYPES,
   LAST_PART_PROMPT,
   MULTI_PART_FILE_PROMPT,
   SINGLE_FILE_PROMPT,
@@ -19,7 +23,7 @@ const useFileUploader = () => {
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [chunkSize, setChunkSize] = useState<number>(500);
+  const [chunkSize, setChunkSize] = useState<number>(DEFAULT_CHUNCK_SIZE);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [currentPart, setCurrentPart] = useState<number>(0);
   const [totalParts, setTotalParts] = useState<number>(0);
@@ -37,9 +41,8 @@ const useFileUploader = () => {
   const [ignoreExtensions, setIgnoreExtensions] =
     useState<string[]>(ZIP_IGNORE_EXTENSION);
 
-  useEffect(() => {
-    getSettingsFromLocalStorage();
-  }, []);
+  const isStopRequestedRef = useRef(false);
+  const [isStopRequested, setIsStopRequested] = useState(false);
 
   const getSettingsFromLocalStorage = async () => {
     const localChunkSize = await getFromLocalStorage<string>(
@@ -126,12 +129,6 @@ const useFileUploader = () => {
     );
   };
 
-  useEffect(() => {
-    if (file) {
-      handleSubmission(file);
-    }
-  }, [file]);
-
   async function handleSubmission(file: File) {
     await getSettingsFromLocalStorage();
     if (file.type === "application/pdf") {
@@ -152,11 +149,38 @@ const useFileUploader = () => {
     } else if (file.type === "application/zip") {
       const fileContent = await readFilesFromZIPFile(file);
       await handleFileContent(fileContent);
+    } else if (IMAGE_FILE_TYPES.exec(file.type)) {
+      const fileContent = await readImageFiles(file);
+      await handleFileContent(fileContent);
+    } else if (file.type === "text/plain") {
+      const fileContent = await readFileAsText(file);
+      await handleFileContent(fileContent);
     } else {
       const fileContent = await readFileAsText(file);
       await handleFileContent(fileContent);
     }
   }
+
+  const readImageFiles = async (file: File | Blob) => {
+    const imagaData = await readFileAsBase64(file);
+    const ocrImage = new OCRImage(imagaData);
+    const text = await ocrImage.getText();
+    return text;
+  };
+
+  const readFileAsBase64 = (file: File | Blob): Promise<string> => {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (event: ProgressEvent<FileReader>) => {
+        const base64 = event.target?.result as string;
+        resolve(base64);
+      };
+      reader.onerror = (event: ProgressEvent<FileReader>) => {
+        reject(event.target?.error);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
 
   function readWordFile(file: File | Blob): Promise<string> {
     return new Promise<string>((resolve, reject) => {
@@ -222,6 +246,8 @@ const useFileUploader = () => {
             fileContent = await readWordFile(fileContentAsBlob);
           } else if (fileExtension === ".xlsx") {
             fileContent = await readExcelFile(fileContentAsBlob);
+          } else if (IMAGE_FILE_EXTENSIONS.includes(fileExtension)) {
+            fileContent = await readImageFiles(fileContentAsBlob);
           } else {
             fileContent = await file.async("string");
           }
@@ -392,13 +418,6 @@ ${promptPart}
     sendButton.disabled = true;
   }
 
-  const isStopRequestedRef = useRef(false);
-  const [isStopRequested, setIsStopRequested] = useState(false);
-
-  useEffect(() => {
-    isStopRequestedRef.current = isStopRequested;
-  }, [isStopRequested]);
-
   const handleFileContent = async (fileContent: string) => {
     const numChunks = Math.ceil(fileContent.length / chunkSize);
     setTotalParts(numChunks);
@@ -480,12 +499,29 @@ ${promptPart}
   }
 
   useEffect(() => {
+    isStopRequestedRef.current = isStopRequested;
     if (isStopRequested) {
       setIsSubmitting(false);
       setFile(null);
       setFileName("");
     }
   }, [isStopRequested]);
+
+  useEffect(() => {
+    if (file) {
+      handleSubmission(file);
+    }
+  }, [file]);
+
+  useEffect(() => {
+    getSettingsFromLocalStorage();
+  }, []);
+
+  useEffect(() => {
+    if (chunkSize < 1) {
+      setChunkSize(DEFAULT_CHUNCK_SIZE);
+    }
+  }, [chunkSize]);
 
   return {
     file,
