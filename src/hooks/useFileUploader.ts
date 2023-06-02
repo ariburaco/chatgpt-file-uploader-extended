@@ -131,34 +131,33 @@ const useFileUploader = () => {
 
   async function handleSubmission(file: File) {
     await getSettingsFromLocalStorage();
+    setIsSubmitting(true);
+    setIsStopRequested(false);
+
+    let fileContent = "";
     if (file.type === "application/pdf") {
-      const fileContent = await readPdfFile(file);
-      await handleFileContent(fileContent);
+      fileContent = await readPdfFile(file);
     } else if (
       file.type ===
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     ) {
-      const fileContent = await readWordFile(file);
-      await handleFileContent(fileContent);
+      fileContent = await readWordFile(file);
     } else if (
       file.type ===
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     ) {
-      const fileContent = await readExcelFile(file);
-      await handleFileContent(fileContent);
+      fileContent = await readExcelFile(file);
     } else if (file.type === "application/zip") {
-      const fileContent = await readFilesFromZIPFile(file);
-      await handleFileContent(fileContent);
+      fileContent = await readFilesFromZIPFile(file);
     } else if (IMAGE_FILE_TYPES.exec(file.type)) {
-      const fileContent = await readImageFiles(file);
-      await handleFileContent(fileContent);
+      fileContent = await readImageFiles(file);
     } else if (file.type === "text/plain") {
-      const fileContent = await readFileAsText(file);
-      await handleFileContent(fileContent);
+      fileContent = await readFileAsText(file);
     } else {
-      const fileContent = await readFileAsText(file);
-      await handleFileContent(fileContent);
+      fileContent = await readFileAsText(file);
     }
+
+    await handleFileContent(fileContent);
   }
 
   const readImageFiles = async (file: File | Blob) => {
@@ -366,20 +365,53 @@ const useFileUploader = () => {
     });
   };
 
+  const setTextareaValue = (
+    element: HTMLTextAreaElement,
+    value: string
+  ): void => {
+    const valueSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLTextAreaElement.prototype,
+      "value"
+    )?.set;
+    const prototype = Object.getPrototypeOf(element);
+    const prototypeValueSetter = Object.getOwnPropertyDescriptor(
+      prototype,
+      "value"
+    )?.set;
+
+    if (valueSetter && valueSetter !== prototypeValueSetter) {
+      prototypeValueSetter?.call(element, value);
+    } else {
+      valueSetter?.call(element, value);
+    }
+
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+
+  const simulateEnterKey = async (value: string): Promise<void> => {
+    const textarea = document.getElementById(
+      "prompt-textarea"
+    ) as HTMLTextAreaElement;
+
+    setTextareaValue(textarea, value); // set the new value
+
+    const enterKeyEvent = new KeyboardEvent("keydown", {
+      key: "Enter",
+      code: "Enter",
+      which: 13,
+      keyCode: 13,
+      bubbles: true,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    textarea.dispatchEvent(enterKeyEvent);
+  };
+
   async function submitConversation(
     text: string,
     part: number,
     done: boolean,
     totalParts: number
   ) {
-    const textarea = document.getElementById(
-      "prompt-textarea"
-    ) as HTMLTextAreaElement;
-
-    if (!textarea) {
-      return;
-    }
-
     const splittedPrompt = `${part === 1 ? basePrompt : ""}
 ${part === 1 ? multipleFilesPrompt : "This is the next part of the file"}`;
 
@@ -404,25 +436,12 @@ ${promptPart}
 "${promptText}"
 `;
 
-    textarea.value = prompt;
-
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    const sendButton = textarea.nextElementSibling as HTMLButtonElement;
-    if (!sendButton) {
-      console.log("Send button not found");
-      return;
-    }
-    sendButton.disabled = false;
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    sendButton.click();
-    sendButton.disabled = true;
+    await simulateEnterKey(prompt);
   }
 
   const handleFileContent = async (fileContent: string) => {
     const numChunks = Math.ceil(fileContent.length / chunkSize);
     setTotalParts(numChunks);
-    setIsSubmitting(true);
-    setIsStopRequested(false);
 
     async function processChunk(i: number) {
       if (i < numChunks && !isStopRequestedRef.current) {

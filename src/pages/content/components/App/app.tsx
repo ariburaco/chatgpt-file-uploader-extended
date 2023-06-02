@@ -88,7 +88,7 @@ export default function App() {
           )}
         </div>
       </div>
-      {isSubmitting && (
+      {isSubmitting && totalParts > 0 && (
         <div className="flex flex-col items-center justify-center gap-2 w-full my-1">
           <ProgressBar completed={currentPart} total={totalParts} />
           <span className="text-gray-600 dark:text-gray-300 text-xs">
