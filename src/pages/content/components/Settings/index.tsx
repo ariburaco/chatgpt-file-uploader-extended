@@ -1,5 +1,5 @@
 import { Tab } from "@headlessui/react";
-import { PACKAGE_VERSION } from "@src/helpers/constants";
+import { ACCEPTED_FILE_TYPES, PACKAGE_VERSION } from "@src/helpers/constants";
 import classnames from "classnames";
 import { Fragment, useState } from "react";
 import { SettingsIcon } from "../Icons/SettingsIcon";
@@ -131,6 +131,25 @@ const Settings = ({
                     />
                   </Row>
                   <Divider />
+                  <Row label="File Types">
+                    <span className="text-gray-600 dark:text-gray-400 text-sm">
+                      All the supported extensions are listed below.
+                    </span>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {ACCEPTED_FILE_TYPES.map((fileType, index) => (
+                        <span key={index} className="text-green-500 text-xs">
+                          {fileType}
+                        </span>
+                      ))}
+                    </div>
+                  </Row>
+                  <Divider />
+                  <span className="text-gray-600 dark:text-gray-400 text-sm">
+                    If the file type is not supported, it will be ignored.
+                    Unless if the file is a plain text file, you can select it
+                    to be uploaded, it will automatically read the whole text of
+                    the file.
+                  </span>
                 </div>
               </Tab.Panel>
 

@@ -1,7 +1,11 @@
 /* eslint-disable no-case-declarations */
 import { getFromLocalStorage, saveToLocalStorage } from "@src/helpers";
+import OCRImage from "@src/helpers/OCRImage";
 import {
   BASE_PROMPT,
+  DEFAULT_CHUNCK_SIZE,
+  IMAGE_FILE_EXTENSIONS,
+  IMAGE_FILE_TYPES,
   LAST_PART_PROMPT,
   MULTI_PART_FILE_PROMPT,
   SINGLE_FILE_PROMPT,
@@ -19,7 +23,7 @@ const useFileUploader = () => {
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [chunkSize, setChunkSize] = useState<number>(500);
+  const [chunkSize, setChunkSize] = useState<number>(DEFAULT_CHUNCK_SIZE);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [currentPart, setCurrentPart] = useState<number>(0);
   const [totalParts, setTotalParts] = useState<number>(0);
@@ -37,9 +41,8 @@ const useFileUploader = () => {
   const [ignoreExtensions, setIgnoreExtensions] =
     useState<string[]>(ZIP_IGNORE_EXTENSION);
 
-  useEffect(() => {
-    getSettingsFromLocalStorage();
-  }, []);
+  const isStopRequestedRef = useRef(false);
+  const [isStopRequested, setIsStopRequested] = useState(false);
 
   const getSettingsFromLocalStorage = async () => {
     const localChunkSize = await getFromLocalStorage<string>(
@@ -126,37 +129,57 @@ const useFileUploader = () => {
     );
   };
 
-  useEffect(() => {
-    if (file) {
-      handleSubmission(file);
-    }
-  }, [file]);
-
   async function handleSubmission(file: File) {
     await getSettingsFromLocalStorage();
+    setIsSubmitting(true);
+    setIsStopRequested(false);
+
+    let fileContent = "";
     if (file.type === "application/pdf") {
-      const fileContent = await readPdfFile(file);
-      await handleFileContent(fileContent);
+      fileContent = await readPdfFile(file);
     } else if (
       file.type ===
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     ) {
-      const fileContent = await readWordFile(file);
-      await handleFileContent(fileContent);
+      fileContent = await readWordFile(file);
     } else if (
       file.type ===
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     ) {
-      const fileContent = await readExcelFile(file);
-      await handleFileContent(fileContent);
+      fileContent = await readExcelFile(file);
     } else if (file.type === "application/zip") {
-      const fileContent = await readFilesFromZIPFile(file);
-      await handleFileContent(fileContent);
+      fileContent = await readFilesFromZIPFile(file);
+    } else if (IMAGE_FILE_TYPES.exec(file.type)) {
+      fileContent = await readImageFiles(file);
+    } else if (file.type === "text/plain") {
+      fileContent = await readFileAsText(file);
     } else {
-      const fileContent = await readFileAsText(file);
-      await handleFileContent(fileContent);
+      fileContent = await readFileAsText(file);
     }
+
+    await handleFileContent(fileContent);
   }
+
+  const readImageFiles = async (file: File | Blob) => {
+    const imagaData = await readFileAsBase64(file);
+    const ocrImage = new OCRImage(imagaData);
+    const text = await ocrImage.getText();
+    return text;
+  };
+
+  const readFileAsBase64 = (file: File | Blob): Promise<string> => {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (event: ProgressEvent<FileReader>) => {
+        const base64 = event.target?.result as string;
+        resolve(base64);
+      };
+      reader.onerror = (event: ProgressEvent<FileReader>) => {
+        reject(event.target?.error);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
 
   function readWordFile(file: File | Blob): Promise<string> {
     return new Promise<string>((resolve, reject) => {
@@ -222,6 +245,8 @@ const useFileUploader = () => {
             fileContent = await readWordFile(fileContentAsBlob);
           } else if (fileExtension === ".xlsx") {
             fileContent = await readExcelFile(fileContentAsBlob);
+          } else if (IMAGE_FILE_EXTENSIONS.includes(fileExtension)) {
+            fileContent = await readImageFiles(fileContentAsBlob);
           } else {
             fileContent = await file.async("string");
           }
@@ -340,20 +365,53 @@ const useFileUploader = () => {
     });
   };
 
+  const setTextareaValue = (
+    element: HTMLTextAreaElement,
+    value: string
+  ): void => {
+    const valueSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLTextAreaElement.prototype,
+      "value"
+    )?.set;
+    const prototype = Object.getPrototypeOf(element);
+    const prototypeValueSetter = Object.getOwnPropertyDescriptor(
+      prototype,
+      "value"
+    )?.set;
+
+    if (valueSetter && valueSetter !== prototypeValueSetter) {
+      prototypeValueSetter?.call(element, value);
+    } else {
+      valueSetter?.call(element, value);
+    }
+
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+
+  const simulateEnterKey = async (value: string): Promise<void> => {
+    const textarea = document.getElementById(
+      "prompt-textarea"
+    ) as HTMLTextAreaElement;
+
+    setTextareaValue(textarea, value); // set the new value
+
+    const enterKeyEvent = new KeyboardEvent("keydown", {
+      key: "Enter",
+      code: "Enter",
+      which: 13,
+      keyCode: 13,
+      bubbles: true,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    textarea.dispatchEvent(enterKeyEvent);
+  };
+
   async function submitConversation(
     text: string,
     part: number,
     done: boolean,
     totalParts: number
   ) {
-    const textarea = document.getElementById(
-      "prompt-textarea"
-    ) as HTMLTextAreaElement;
-
-    if (!textarea) {
-      return;
-    }
-
     const splittedPrompt = `${part === 1 ? basePrompt : ""}
 ${part === 1 ? multipleFilesPrompt : "This is the next part of the file"}`;
 
@@ -378,32 +436,12 @@ ${promptPart}
 "${promptText}"
 `;
 
-    textarea.value = prompt;
-
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    const sendButton = textarea.nextElementSibling as HTMLButtonElement;
-    if (!sendButton) {
-      console.log("Send button not found");
-      return;
-    }
-    sendButton.disabled = false;
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    sendButton.click();
-    sendButton.disabled = true;
+    await simulateEnterKey(prompt);
   }
-
-  const isStopRequestedRef = useRef(false);
-  const [isStopRequested, setIsStopRequested] = useState(false);
-
-  useEffect(() => {
-    isStopRequestedRef.current = isStopRequested;
-  }, [isStopRequested]);
 
   const handleFileContent = async (fileContent: string) => {
     const numChunks = Math.ceil(fileContent.length / chunkSize);
     setTotalParts(numChunks);
-    setIsSubmitting(true);
-    setIsStopRequested(false);
 
     async function processChunk(i: number) {
       if (i < numChunks && !isStopRequestedRef.current) {
@@ -480,12 +518,29 @@ ${promptPart}
   }
 
   useEffect(() => {
+    isStopRequestedRef.current = isStopRequested;
     if (isStopRequested) {
       setIsSubmitting(false);
       setFile(null);
       setFileName("");
     }
   }, [isStopRequested]);
+
+  useEffect(() => {
+    if (file) {
+      handleSubmission(file);
+    }
+  }, [file]);
+
+  useEffect(() => {
+    getSettingsFromLocalStorage();
+  }, []);
+
+  useEffect(() => {
+    if (chunkSize < 1) {
+      setChunkSize(DEFAULT_CHUNCK_SIZE);
+    }
+  }, [chunkSize]);
 
   return {
     file,
