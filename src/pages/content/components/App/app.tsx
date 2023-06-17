@@ -6,6 +6,7 @@ import { ACCEPTED_FILE_TYPES } from "@src/helpers/constants";
 export default function App() {
   const {
     isSubmitting,
+    handleFileInput,
     onFileChange,
     onUploadButtonClick,
     fileInputRef,
@@ -16,9 +17,11 @@ export default function App() {
     basePrompt,
     singleFilePrompt,
     multipleFilesPrompt,
+    multipleFilesUpPrompt,
     lastPartPrompt,
     setSingleFilePrompt,
     setMultipleFilesPrompt,
+    setMultipleFilesUpPrompt,
     setLastPartPrompt,
     setBasePrompt,
     updateLocalStorageSettings,
@@ -53,9 +56,11 @@ export default function App() {
             basePrompt={basePrompt}
             singleFilePrompt={singleFilePrompt}
             multipleFilesPrompt={multipleFilesPrompt}
+            multipleFilesUpPrompt={multipleFilesUpPrompt}
             lastPartPrompt={lastPartPrompt}
             setSingleFilePrompt={setSingleFilePrompt}
             setMultipleFilesPrompt={setMultipleFilesPrompt}
+            setMultipleFilesUpPrompt={setMultipleFilesUpPrompt}
             setLastPartPrompt={setLastPartPrompt}
             setBasePrompt={setBasePrompt}
             updateLocalStorageSettings={updateLocalStorageSettings}
@@ -72,6 +77,12 @@ export default function App() {
               isSubmitting ? "cursor-not-allowed bg-gray-900" : "bg-green-500"
             }`}
             onClick={onUploadButtonClick}
+            onDragOver={(e) => e.preventDefault()}
+            onDragLeave={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              handleFileInput(e.dataTransfer.files);
+            }}
             disabled={isSubmitting}
             style={{ height: "40px", padding: "0 20px" }}
           >
