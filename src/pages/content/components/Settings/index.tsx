@@ -10,11 +10,13 @@ interface SettingsProps {
   basePrompt: string;
   singleFilePrompt: string;
   multipleFilesPrompt: string;
+  multipleFilesUpPrompt: string;
   lastPartPrompt: string;
   blacklist: string[];
   ignoreExtensions: string[];
   setSingleFilePrompt: (prompt: string) => void;
   setMultipleFilesPrompt: (prompt: string) => void;
+  setMultipleFilesUpPrompt: (prompt: string) => void;
   setLastPartPrompt: (prompt: string) => void;
   setBasePrompt: (prompt: string) => void;
   onChunkSizeChange: (chunkSize: number) => void;
@@ -30,9 +32,11 @@ const Settings = ({
   basePrompt,
   singleFilePrompt,
   multipleFilesPrompt,
+  multipleFilesUpPrompt,
   lastPartPrompt,
   setSingleFilePrompt,
   setMultipleFilesPrompt,
+  setMultipleFilesUpPrompt,
   setLastPartPrompt,
   setBasePrompt,
   updateLocalStorageSettings,
@@ -173,13 +177,22 @@ const Settings = ({
                       onChange={(e) => setSingleFilePrompt(e.target.value)}
                     />
                   </Row>
-                  <Row label="Multi Part Prompt">
+                  <Row label="Multi Part first Prompt">
                     <textarea
                       rows={2}
                       className="m-0 w-full resize-none border-0 bg-transparent p-0 pr-7 focus:ring-0 focus-visible:ring-0 dark:bg-transparent pl-2 md:pl-0"
                       placeholder="Enter the multi file prompt"
                       value={multipleFilesPrompt}
                       onChange={(e) => setMultipleFilesPrompt(e.target.value)}
+                    />
+                  </Row>
+                  <Row label="Multi Part consecutive Prompts">
+                    <textarea
+                      rows={2}
+                      className="m-0 w-full resize-none border-0 bg-transparent p-0 pr-7 focus:ring-0 focus-visible:ring-0 dark:bg-transparent pl-2 md:pl-0"
+                      placeholder="Enter the multi file prompt"
+                      value={multipleFilesUpPrompt}
+                      onChange={(e) => setMultipleFilesUpPrompt(e.target.value)}
                     />
                   </Row>
                   <Row label="Last Part Prompt">

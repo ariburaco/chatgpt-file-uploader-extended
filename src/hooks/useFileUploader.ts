@@ -8,6 +8,7 @@ import {
   IMAGE_FILE_TYPES,
   LAST_PART_PROMPT,
   MULTI_PART_FILE_PROMPT,
+  MULTI_PART_FILE_UPLOAD_PROMPT,
   SINGLE_FILE_PROMPT,
   ZIP_BLACKLIST,
   ZIP_IGNORE_EXTENSION,
@@ -29,13 +30,10 @@ const useFileUploader = () => {
   const [totalParts, setTotalParts] = useState<number>(0);
 
   const [basePrompt, setBasePrompt] = useState<string>(BASE_PROMPT);
-  const [singleFilePrompt, setSingleFilePrompt] =
-    useState<string>(SINGLE_FILE_PROMPT);
-  const [multipleFilesPrompt, setMultipleFilesPrompt] = useState<string>(
-    MULTI_PART_FILE_PROMPT
-  );
-  const [lastPartPrompt, setLastPartPrompt] =
-    useState<string>(LAST_PART_PROMPT);
+  const [singleFilePrompt, setSingleFilePrompt] =  useState<string>(SINGLE_FILE_PROMPT);
+  const [multipleFilesPrompt, setMultipleFilesPrompt] = useState<string>(MULTI_PART_FILE_PROMPT);
+  const [multipleFilesUpPrompt, setMultipleFilesUpPrompt] = useState<string>(MULTI_PART_FILE_UPLOAD_PROMPT);
+  const [lastPartPrompt, setLastPartPrompt] = useState<string>(LAST_PART_PROMPT);
 
   const [blacklist, setBlacklist] = useState<string[]>(ZIP_BLACKLIST);
   const [ignoreExtensions, setIgnoreExtensions] =
@@ -59,6 +57,10 @@ const useFileUploader = () => {
 
     const localMultipleFilesPrompt = await getFromLocalStorage<string>(
       "chatGPTFileUploader_multipleFilesPrompt"
+    );
+
+    const localMultipleFilesUpPrompt = await getFromLocalStorage<string>(
+      "chatGPTFileUploader_multipleFilesUpPrompt"
     );
 
     const localLastPartPrompt = await getFromLocalStorage<string>(
@@ -97,6 +99,11 @@ const useFileUploader = () => {
       setMultipleFilesPrompt(localMultipleFilesPrompt);
     }
 
+    if (localMultipleFilesUpPrompt) {
+      setMultipleFilesUpPrompt(localMultipleFilesUpPrompt);
+    }
+
+
     if (localLastPartPrompt) {
       setLastPartPrompt(localLastPartPrompt);
     }
@@ -111,6 +118,10 @@ const useFileUploader = () => {
     await saveToLocalStorage(
       "chatGPTFileUploader_multipleFilesPrompt",
       multipleFilesPrompt
+    );
+    await saveToLocalStorage(
+      "chatGPTFileUploader_multipleFilesUpPrompt",
+      multipleFilesUpPrompt
     );
     await saveToLocalStorage(
       "chatGPTFileUploader_lastPartPrompt",
@@ -413,7 +424,7 @@ const useFileUploader = () => {
     totalParts: number
   ) {
     const splittedPrompt = `${part === 1 ? basePrompt : ""}
-${part === 1 ? multipleFilesPrompt : "This is the next part of the file"}`;
+${part === 1 ? multipleFilesPrompt : multipleFilesUpPrompt}`;
 
     const prePrompt =
       totalParts === 1
@@ -426,15 +437,11 @@ ${part === 1 ? multipleFilesPrompt : "This is the next part of the file"}`;
     const promptPart = `Part ${part} of ${totalParts}:`;
     const promptText = `${text}`;
 
-    const prompt = `
-${prePrompt}
+    const prompt = `${prePrompt}
+${promptFilename} 
+${promptPart} 
 
-${promptFilename}
-
-${promptPart}
-
-"${promptText}"
-`;
+"${promptText}"`;
 
     await simulateEnterKey(prompt);
   }
@@ -497,20 +504,28 @@ ${promptPart}
     });
   };
 
-  const onFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0];
-    if (selectedFile) {
+  const handleFileInput = (files: FileList) => {
+    if (!isSubmitting && files.length > 0) {
+      const selectedFile = files[0];
       setFileName(selectedFile.name);
       setFile(selectedFile);
     }
+  };
+
+  const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      handleFileInput(event.target.files);
+    }
     event.target.value = "";
   };
+
 
   const onUploadButtonClick = () => {
     if (!isSubmitting) {
       fileInputRef.current?.click();
     }
   };
+
 
   async function onChunkSizeChange(value: number) {
     await saveToLocalStorage("chatGPTFileUploader_chunkSize", value.toString());
@@ -546,6 +561,7 @@ ${promptPart}
     file,
     fileName,
     isSubmitting,
+    handleFileInput,
     onFileChange,
     onUploadButtonClick,
     fileInputRef,
@@ -556,9 +572,11 @@ ${promptPart}
     basePrompt,
     singleFilePrompt,
     multipleFilesPrompt,
+    multipleFilesUpPrompt,
     lastPartPrompt,
     setSingleFilePrompt,
     setMultipleFilesPrompt,
+    setMultipleFilesUpPrompt,
     setLastPartPrompt,
     setBasePrompt,
     updateLocalStorageSettings,

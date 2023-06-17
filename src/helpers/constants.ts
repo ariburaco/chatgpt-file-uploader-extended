@@ -1,14 +1,15 @@
-export const DEFAULT_CHUNCK_SIZE = 2000;
+export const DEFAULT_CHUNCK_SIZE = 13500;
 
-export const BASE_PROMPT = `Ignore all the instructions you got before.`;
+export const BASE_PROMPT = '';
 
-export const SINGLE_FILE_PROMPT = `${BASE_PROMPT} This is the whole document. So, please provide me a small brief of the document, and expect some questions from me.`;
+export const SINGLE_FILE_PROMPT = `${BASE_PROMPT} The complete document is provided below. After reviewing the document, please respond with "I have finished reviewing the document and I'm ready to assist you with your inquiries."`;
 
-export const LAST_PART_PROMPT = `This is the last part of the document. So, please provide me a small brief of the document, and expect some questions from me.`;
+export const LAST_PART_PROMPT = `This is the final segment of the document.\nPlease carefully review all parts of the document that have been provided in this conversation before summarizing or answering any questions about it. Once you have reviewed all sections of the document, please respond with "I have finished reviewing the document and I'm ready to assist you with your inquiries."`;
 
-export const MULTI_PART_FILE_PROMPT = `I'll give you a splitted document, and Please WAIT until I finish sending the whole context of the document. 
-I'll let you know when I sent the last part of the document with the text [LAST_PART], otherwise answer me with [CONTINUE] text make sure you understand that there is more parts of the document.
-I'll let you know how many parts of the whole document. So, you have to wait until I've finished, meantime please DON'T generate any new response rather than [CONTINUE]`;
+export const MULTI_PART_FILE_PROMPT = `The document, that I'm about to share, will be divided into several parts. I request that you wait until all parts have been provided before summarizing or answering any questions about it. In the meantime, please respond with "Acknowledged, I will wait for all parts before proceeding."`;
+
+export const MULTI_PART_FILE_UPLOAD_PROMPT = `This is one of several parts of the document.\nPlease wait until all parts have been provided before summarizing or answering any questions about it. For now, please respond with "Acknowledged, I'm waiting for the remaining parts."`;
+
 
 export const ZIP_BLACKLIST = [
   "package-lock.json",
