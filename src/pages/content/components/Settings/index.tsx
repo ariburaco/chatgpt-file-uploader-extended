@@ -32,11 +32,9 @@ const Settings = ({
   basePrompt,
   singleFilePrompt,
   multipleFilesPrompt,
-  multipleFilesUpPrompt,
   lastPartPrompt,
   setSingleFilePrompt,
   setMultipleFilesPrompt,
-  setMultipleFilesUpPrompt,
   setLastPartPrompt,
   setBasePrompt,
   updateLocalStorageSettings,
@@ -45,6 +43,8 @@ const Settings = ({
   setIgnoreExtensions,
   setBlacklist,
   updateBlackListAndIgnoreExtensions,
+  multipleFilesUpPrompt,
+  setMultipleFilesUpPrompt,
 }: SettingsProps) => {
   const [openModal, setOpenModal] = useState(false);
 
@@ -158,10 +158,10 @@ const Settings = ({
               </Tab.Panel>
 
               <Tab.Panel>
-                <div className="flex flex-col items-start justify-center gap-4 w-full py-6 px-2">
+                <div className="grid grid-cols-2 items-start justify-center gap-4 w-full py-6 px-2">
                   <Row label="Base Prompt">
                     <textarea
-                      rows={2}
+                      rows={3}
                       className="m-0 w-full resize-none border-0 bg-transparent p-0 pr-7 focus:ring-0 focus-visible:ring-0 dark:bg-transparent pl-2 md:pl-0"
                       placeholder="Enter the base prompt"
                       value={basePrompt}
@@ -170,25 +170,25 @@ const Settings = ({
                   </Row>
                   <Row label="Single Part Prompt">
                     <textarea
-                      rows={2}
+                      rows={3}
                       className="m-0 w-full resize-none border-0 bg-transparent p-0 pr-7 focus:ring-0 focus-visible:ring-0 dark:bg-transparent pl-2 md:pl-0"
                       placeholder="Enter the single file prompt"
                       value={singleFilePrompt}
                       onChange={(e) => setSingleFilePrompt(e.target.value)}
                     />
                   </Row>
-                  <Row label="Multi Part first Prompt">
+                  <Row label="Multi Part First Prompt">
                     <textarea
-                      rows={2}
+                      rows={3}
                       className="m-0 w-full resize-none border-0 bg-transparent p-0 pr-7 focus:ring-0 focus-visible:ring-0 dark:bg-transparent pl-2 md:pl-0"
                       placeholder="Enter the multi file prompt"
                       value={multipleFilesPrompt}
                       onChange={(e) => setMultipleFilesPrompt(e.target.value)}
                     />
                   </Row>
-                  <Row label="Multi Part consecutive Prompts">
+                  <Row label="Multi Part Consecutive Prompts">
                     <textarea
-                      rows={2}
+                      rows={3}
                       className="m-0 w-full resize-none border-0 bg-transparent p-0 pr-7 focus:ring-0 focus-visible:ring-0 dark:bg-transparent pl-2 md:pl-0"
                       placeholder="Enter the multi file prompt"
                       value={multipleFilesUpPrompt}
@@ -197,15 +197,15 @@ const Settings = ({
                   </Row>
                   <Row label="Last Part Prompt">
                     <textarea
-                      rows={2}
+                      rows={3}
                       className="m-0 w-full resize-none border-0 bg-transparent p-0 pr-7 focus:ring-0 focus-visible:ring-0 dark:bg-transparent pl-2 md:pl-0"
                       placeholder="Enter the multi file prompt"
                       value={lastPartPrompt}
                       onChange={(e) => setLastPartPrompt(e.target.value)}
                     />
                   </Row>
-                  <Divider />
                 </div>
+                <Divider />
                 <div className="flex flex-row items-center justify-end gap-4 w-full p-2">
                   <span className="m-0 text-gray-500 dark:text-gray-400 text-sm">
                     Note: Dont forget the Save the settings
@@ -361,7 +361,7 @@ const Row = ({
   children: React.ReactNode;
 }) => {
   return (
-    <div className="flex flex-col gap-2 items-start justify-start w-full">
+    <div className="col-span-1 flex flex-col gap-2 items-start justify-start w-full">
       <label className="text-gray-600 dark:text-gray-300 text-sm text-left">
         {label}
       </label>

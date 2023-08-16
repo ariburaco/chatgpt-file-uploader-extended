@@ -1,4 +1,6 @@
-export const DEFAULT_CHUNCK_SIZE = 13500;
+export const DEFAULT_CHUNCK_SIZE = 10000;
+export const WAIT_TIME = 1500;
+
 
 export const BASE_PROMPT = '';
 
@@ -40,7 +42,7 @@ export const ZIP_IGNORE_EXTENSION = [
   ".log",
 ];
 
-export const PACKAGE_VERSION = "1.3.0";
+export const PACKAGE_VERSION = "1.4.0";
 
 export const IMAGE_FILE_TYPES = /image\/(png|jpg|jpeg|bmp|webp)/;
 

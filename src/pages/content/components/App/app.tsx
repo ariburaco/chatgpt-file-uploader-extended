@@ -1,12 +1,12 @@
 import useFileUploader from "@src/hooks/useFileUploader";
 import ProgressBar from "../ProgressBar";
 import Settings from "../Settings";
-import { ACCEPTED_FILE_TYPES } from "@src/helpers/constants";
+import StopIcon from "../Icons/StopIcon";
+import UploadIcon from "../Icons/UploadIcon";
 
 export default function App() {
   const {
     isSubmitting,
-    handleFileInput,
     onFileChange,
     onUploadButtonClick,
     fileInputRef,
@@ -17,11 +17,9 @@ export default function App() {
     basePrompt,
     singleFilePrompt,
     multipleFilesPrompt,
-    multipleFilesUpPrompt,
     lastPartPrompt,
     setSingleFilePrompt,
     setMultipleFilesPrompt,
-    setMultipleFilesUpPrompt,
     setLastPartPrompt,
     setBasePrompt,
     updateLocalStorageSettings,
@@ -31,6 +29,9 @@ export default function App() {
     setIgnoreExtensions,
     updateBlackListAndIgnoreExtensions,
     setIsStopRequested,
+    handleFileInput,
+    multipleFilesUpPrompt,
+    setMultipleFilesUpPrompt,
   } = useFileUploader();
 
   return (
@@ -44,7 +45,8 @@ export default function App() {
           ref={fileInputRef}
           style={{ display: "none" }}
           onChange={onFileChange}
-          accept={ACCEPTED_FILE_TYPES.join(", ")}
+          // accept={ACCEPTED_FILE_TYPES.join(", ")}
+          accept="*"
         />
         <span className="text-gray-600 dark:text-gray-300 text-sm">
           Chunk Size: {chunkSize} characters
@@ -56,10 +58,10 @@ export default function App() {
             basePrompt={basePrompt}
             singleFilePrompt={singleFilePrompt}
             multipleFilesPrompt={multipleFilesPrompt}
-            multipleFilesUpPrompt={multipleFilesUpPrompt}
             lastPartPrompt={lastPartPrompt}
             setSingleFilePrompt={setSingleFilePrompt}
             setMultipleFilesPrompt={setMultipleFilesPrompt}
+            multipleFilesUpPrompt={multipleFilesUpPrompt}
             setMultipleFilesUpPrompt={setMultipleFilesUpPrompt}
             setLastPartPrompt={setLastPartPrompt}
             setBasePrompt={setBasePrompt}
@@ -77,24 +79,24 @@ export default function App() {
               isSubmitting ? "cursor-not-allowed bg-gray-900" : "bg-green-500"
             }`}
             onClick={onUploadButtonClick}
+            disabled={isSubmitting}
+            style={{ height: "40px", padding: "0 12px" }}
             onDragOver={(e) => e.preventDefault()}
             onDragLeave={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
               handleFileInput(e.dataTransfer.files);
             }}
-            disabled={isSubmitting}
-            style={{ height: "40px", padding: "0 20px" }}
           >
-            Upload File
+            <UploadIcon />
           </button>
           {isSubmitting && (
             <button
               className="text-white rounded-md w-fit hover:opacity-80 transition-all bg-red-500"
               onClick={() => setIsStopRequested(true)}
-              style={{ height: "40px", padding: "0 20px" }}
+              style={{ height: "40px", padding: "0 12px" }}
             >
-              Stop Upload
+              <StopIcon />
             </button>
           )}
         </div>

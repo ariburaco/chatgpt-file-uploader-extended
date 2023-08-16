@@ -11,24 +11,26 @@ root.classList.add("flex-row");
 root.classList.add("justify-end");
 root.classList.add("items-center");
 
-const chatBox = document.querySelector(
-  "#__next > div > div > div > main > div > form > div"
-);
+const placeRootToDOM = () => {
+  const promptTextarea = document.querySelector("#prompt-textarea");
+  const parent = promptTextarea?.parentElement?.parentElement;
+
+  if (parent) {
+    parent.append(root);
+    createRoot(root).render(<App />);
+  }
+};
+
+placeRootToDOM();
 
 const observer = new MutationObserver((mutationsList, observer) => {
   // Look through all mutations that just occured
   for (const mutation of mutationsList) {
     // If the addedNode property has a value
     if (mutation.addedNodes.length) {
-      if (!document.getElementById(root.id)) {
-        const chatBox = document.querySelector(
-          "#__next > div > div > div > main > div > form > div"
-        );
-
-        if (chatBox) {
-          chatBox.append(root);
-          createRoot(root).render(<App />);
-        }
+      const rootOld = document.getElementById(root.id);
+      if (!rootOld) {
+        placeRootToDOM();
       }
     }
   }
@@ -36,8 +38,3 @@ const observer = new MutationObserver((mutationsList, observer) => {
 
 // Start observing the document with the configured parameters
 observer.observe(document, { childList: true, subtree: true });
-
-if (chatBox) {
-  chatBox.append(root);
-  createRoot(root).render(<App />);
-}

@@ -40,10 +40,11 @@ const Modal = ({ title, children, openModal, setOpenModal }: ModalProps) => {
             </span>
             {/* Modal panel, show/hide based on modal state. */}
             <div
-              className="relative col-auto col-start-2 row-auto row-start-2 w-full rounded-lg text-left shadow-xl transition-all left-1/2 -translate-x-1/2 bg-white dark:bg-gray-900 md:w-[680px]"
+              className="relative col-auto col-start-2 row-auto row-start-2 w-full rounded-lg text-left shadow-xl transition-all left-1/2 -translate-x-1/2 bg-white dark:bg-gray-900"
               role="dialog"
               aria-modal="true"
               aria-labelledby="modal-headline"
+              style={{ maxWidth: "65vw", maxHeight: "90vh", top: "10vh" }}
             >
               <div className="gap-2 px-4 pb-4 pt-5 sm:p-6 flex items-center justify-between border-b border-black/10 dark:border-white/10 ">
                 <h3 className="text-lg leading-6 font-medium text-gray-600 dark:text-gray-300">
@@ -58,6 +59,24 @@ const Modal = ({ title, children, openModal, setOpenModal }: ModalProps) => {
               </div>
               <div className="mt-2 w-full h-full p-4 overflow-y-scroll">
                 {children}
+              </div>
+              <div className="flex flex-row items-center justify-center gap-2 p-4">
+                <a
+                  href="https://www.buymeacoffee.com/aliburakozden"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <img
+                    src="https://cdn.buymeacoffee.com/buttons/v2/default-red.png"
+                    alt="Buy Me A Coffee"
+                    // height: 60px !important;width: 217px !important;
+                    style={{
+                      height: 30,
+                      width: 120,
+                      objectFit: "contain",
+                    }}
+                  />
+                </a>
               </div>
             </div>
           </div>
