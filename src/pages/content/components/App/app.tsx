@@ -35,7 +35,10 @@ export default function App() {
   } = useFileUploader();
 
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full">
+    <div
+      className="flex flex-col items-center justify-center w-full h-full"
+      style={{ marginLeft: 4 }}
+    >
       <div
         className="py-2 flex flex-col md:flex-row items-center gap-2 w-full"
         style={{ justifyContent: "end" }}
@@ -48,10 +51,8 @@ export default function App() {
           // accept={ACCEPTED_FILE_TYPES.join(", ")}
           accept="*"
         />
-        <span className="text-gray-600 dark:text-gray-300 text-sm">
-          Chunk Size: {chunkSize} characters
-        </span>
-        <div className="flex flex-row items-center justify-start gap-2">
+
+        <div className="flex flex-row items-center justify-start gap-1">
           <Settings
             onChunkSizeChange={onChunkSizeChange}
             chunkSize={chunkSize}
@@ -74,13 +75,14 @@ export default function App() {
               updateBlackListAndIgnoreExtensions
             }
           />
+
           <button
             className={`text-white rounded-md w-fit hover:opacity-80 transition-all ${
               isSubmitting ? "cursor-not-allowed bg-gray-900" : "bg-green-500"
             }`}
             onClick={onUploadButtonClick}
             disabled={isSubmitting}
-            style={{ height: "40px", padding: "0 12px" }}
+            style={{ height: "36px", padding: "0 8px" }}
             onDragOver={(e) => e.preventDefault()}
             onDragLeave={(e) => e.preventDefault()}
             onDrop={(e) => {
@@ -90,19 +92,23 @@ export default function App() {
           >
             <UploadIcon />
           </button>
+
           {isSubmitting && (
             <button
               className="text-white rounded-md w-fit hover:opacity-80 transition-all bg-red-500"
               onClick={() => setIsStopRequested(true)}
-              style={{ height: "40px", padding: "0 12px" }}
+              style={{ height: "36px", padding: "0 8px" }}
             >
               <StopIcon />
             </button>
           )}
         </div>
       </div>
+      <span className="text-gray-600 dark:text-gray-300 text-xs">
+        {chunkSize} chars
+      </span>
       {isSubmitting && totalParts > 0 && (
-        <div className="flex flex-col items-center justify-center gap-2 w-full my-1">
+        <div className="progressbar-container flex flex-col items-center justify-center gap-2">
           <ProgressBar completed={currentPart} total={totalParts} />
           <span className="text-gray-600 dark:text-gray-300 text-xs">
             {currentPart} of {totalParts} parts uploaded

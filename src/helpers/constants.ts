@@ -1,8 +1,7 @@
 export const DEFAULT_CHUNCK_SIZE = 10000;
-export const WAIT_TIME = 1500;
+export const WAIT_TIME = 1000;
 
-
-export const BASE_PROMPT = '';
+export const BASE_PROMPT = "";
 
 export const SINGLE_FILE_PROMPT = `${BASE_PROMPT} The complete document is provided below. After reviewing the document, please respond with "I have finished reviewing the document and I'm ready to assist you with your inquiries."`;
 
@@ -11,7 +10,6 @@ export const LAST_PART_PROMPT = `This is the final segment of the document.\nPle
 export const MULTI_PART_FILE_PROMPT = `The document, that I'm about to share, will be divided into several parts. I request that you wait until all parts have been provided before summarizing or answering any questions about it. In the meantime, please respond with "Acknowledged, I will wait for all parts before proceeding."`;
 
 export const MULTI_PART_FILE_UPLOAD_PROMPT = `This is one of several parts of the document.\nPlease wait until all parts have been provided before summarizing or answering any questions about it. For now, please respond with "Acknowledged, I'm waiting for the remaining parts."`;
-
 
 export const ZIP_BLACKLIST = [
   "package-lock.json",
@@ -42,7 +40,7 @@ export const ZIP_IGNORE_EXTENSION = [
   ".log",
 ];
 
-export const PACKAGE_VERSION = "1.4.0";
+export const PACKAGE_VERSION = "1.4.1";
 
 export const IMAGE_FILE_TYPES = /image\/(png|jpg|jpeg|bmp|webp)/;
 

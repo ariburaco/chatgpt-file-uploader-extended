@@ -1,3 +1,16 @@
-.crx-class {
-  color: pink;
+.progressbar-container {
+  position: fixed;
+  z-index: 1000;
+  width: 400px;
+  top: 60px;
+  left: calc(50% + 130px);
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  padding: 16px;
+
+  @media (max-width: 768px) {
+    left: 50%;
+  }
 }

@@ -330,9 +330,23 @@ ${promptPart}
     }
   };
 
-  async function onChunkSizeChange(value: number) {
-    await saveToLocalStorage("chatGPTFileUploader_chunkSize", value.toString());
-    setChunkSize(value);
+  async function onChunkSizeChange(value: string) {
+    let parsedValue = parseInt(value);
+
+    if (isNaN(parsedValue)) {
+      return;
+    }
+
+    if (parsedValue < 1) {
+      parsedValue = 1;
+    }
+
+    if (parsedValue > 99999) {
+      parsedValue = 99999;
+    }
+
+    await saveToLocalStorage("chatGPTFileUploader_chunkSize", parsedValue);
+    setChunkSize(parsedValue);
   }
 
   useEffect(() => {

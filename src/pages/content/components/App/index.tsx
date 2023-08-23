@@ -1,7 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "@src/pages/content/components/App/app";
 // import refreshOnUpdate from "virtual:reload-on-update-in-view";
-
 // refreshOnUpdate("pages/content/components/App");
 
 const root = document.createElement("div");
@@ -11,7 +10,7 @@ root.classList.add("flex-row");
 root.classList.add("justify-end");
 root.classList.add("items-center");
 
-const placeRootToDOM = () => {
+const placeFileUploaderSectionToDOM = () => {
   const promptTextarea = document.querySelector("#prompt-textarea");
   const parent = promptTextarea?.parentElement?.parentElement;
 
@@ -21,7 +20,7 @@ const placeRootToDOM = () => {
   }
 };
 
-placeRootToDOM();
+placeFileUploaderSectionToDOM();
 
 const observer = new MutationObserver((mutationsList, observer) => {
   // Look through all mutations that just occured
@@ -30,7 +29,7 @@ const observer = new MutationObserver((mutationsList, observer) => {
     if (mutation.addedNodes.length) {
       const rootOld = document.getElementById(root.id);
       if (!rootOld) {
-        placeRootToDOM();
+        placeFileUploaderSectionToDOM();
       }
     }
   }

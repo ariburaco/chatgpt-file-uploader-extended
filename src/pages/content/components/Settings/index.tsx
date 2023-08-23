@@ -19,7 +19,7 @@ interface SettingsProps {
   setMultipleFilesUpPrompt: (prompt: string) => void;
   setLastPartPrompt: (prompt: string) => void;
   setBasePrompt: (prompt: string) => void;
-  onChunkSizeChange: (chunkSize: number) => void;
+  onChunkSizeChange: (chunkSize: string) => void;
   updateLocalStorageSettings: () => void;
   setBlacklist: (blacklist: string[]) => void;
   setIgnoreExtensions: (ignoreExtensions: string[]) => void;
@@ -123,15 +123,15 @@ const Settings = ({
             <Tab.Panels>
               <Tab.Panel>
                 <div className="flex flex-col items-start justify-center gap-4 w-full py-6 px-2">
-                  <Row label="Chunk Size">
+                  <Row
+                    label="Chunk Size"
+                    description="The character count of each part. If your document is too long, you can split it into multiple parts."
+                  >
                     <input
-                      type="number"
                       className="m-0 w-full resize-none border-0 bg-transparent p-0 pr-7 focus:ring-0 focus-visible:ring-0 dark:bg-transparent pl-2 md:pl-0"
                       placeholder="Enter number of chunk size"
                       value={chunkSize}
-                      onChange={(e) =>
-                        onChunkSizeChange(parseInt(e.target.value))
-                      }
+                      onChange={(e) => onChunkSizeChange(e.target.value)}
                     />
                   </Row>
                   <Divider />
@@ -159,7 +159,10 @@ const Settings = ({
 
               <Tab.Panel>
                 <div className="grid grid-cols-2 items-start justify-center gap-4 w-full py-6 px-2">
-                  <Row label="Base Prompt">
+                  <Row
+                    label="Base Prompt"
+                    description="This prompt will be used for the first part."
+                  >
                     <textarea
                       rows={3}
                       className="m-0 w-full resize-none border-0 bg-transparent p-0 pr-7 focus:ring-0 focus-visible:ring-0 dark:bg-transparent pl-2 md:pl-0"
@@ -168,7 +171,10 @@ const Settings = ({
                       onChange={(e) => setBasePrompt(e.target.value)}
                     />
                   </Row>
-                  <Row label="Single Part Prompt">
+                  <Row
+                    label="Single Part Prompt"
+                    description="This prompt will be used for the only single part documents."
+                  >
                     <textarea
                       rows={3}
                       className="m-0 w-full resize-none border-0 bg-transparent p-0 pr-7 focus:ring-0 focus-visible:ring-0 dark:bg-transparent pl-2 md:pl-0"
@@ -177,7 +183,10 @@ const Settings = ({
                       onChange={(e) => setSingleFilePrompt(e.target.value)}
                     />
                   </Row>
-                  <Row label="Multi Part First Prompt">
+                  <Row
+                    label="Multi Part First Prompt"
+                    description="This prompt will be used for the first part of the multi part documents."
+                  >
                     <textarea
                       rows={3}
                       className="m-0 w-full resize-none border-0 bg-transparent p-0 pr-7 focus:ring-0 focus-visible:ring-0 dark:bg-transparent pl-2 md:pl-0"
@@ -186,7 +195,10 @@ const Settings = ({
                       onChange={(e) => setMultipleFilesPrompt(e.target.value)}
                     />
                   </Row>
-                  <Row label="Multi Part Consecutive Prompts">
+                  <Row
+                    label="Multi Part Consecutive Prompts"
+                    description="This prompt will be used for the each parts of the multi part documents."
+                  >
                     <textarea
                       rows={3}
                       className="m-0 w-full resize-none border-0 bg-transparent p-0 pr-7 focus:ring-0 focus-visible:ring-0 dark:bg-transparent pl-2 md:pl-0"
@@ -195,7 +207,10 @@ const Settings = ({
                       onChange={(e) => setMultipleFilesUpPrompt(e.target.value)}
                     />
                   </Row>
-                  <Row label="Last Part Prompt">
+                  <Row
+                    label="Last Part Prompt"
+                    description="This prompt will be used for the last part of the multi part documents."
+                  >
                     <textarea
                       rows={3}
                       className="m-0 w-full resize-none border-0 bg-transparent p-0 pr-7 focus:ring-0 focus-visible:ring-0 dark:bg-transparent pl-2 md:pl-0"
@@ -302,6 +317,7 @@ const Settings = ({
                     ))}
                   </div>
                 </div>
+                <Divider />
                 <div className="flex flex-row items-center justify-end gap-4 w-full p-2">
                   <span className="m-0 text-gray-500 dark:text-gray-400 text-sm">
                     Note: Dont forget the Save the settings
@@ -335,6 +351,30 @@ const Settings = ({
                     </a>
                   </Row>
                   <Divider />
+                  <Row label="Website">
+                    <a
+                      href="https://www.futuromy.com/"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="m-0 text-gray-500 dark:text-gray-400 hover:opacity-80 transition-all"
+                    >
+                      futuromy.com
+                    </a>
+                  </Row>
+                  <Row
+                    label="Contact me if you have a project idea"
+                    description="I am open to work on new projects. If you have a project idea, you can contact me."
+                  >
+                    <a
+                      href="mailto:ozdenaliburak@gmail.com"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="m-0 text-gray-500 dark:text-gray-400 hover:opacity-80 transition-all"
+                    >
+                      ozdenaliburak@gmail.com
+                    </a>
+                  </Row>
+                  <Divider />
                 </div>
               </Tab.Panel>
             </Tab.Panels>
@@ -356,15 +396,24 @@ const Divider = () => {
 const Row = ({
   label,
   children,
+  description,
 }: {
   label: string;
+  description?: string;
   children: React.ReactNode;
 }) => {
   return (
     <div className="col-span-1 flex flex-col gap-2 items-start justify-start w-full">
-      <label className="text-gray-600 dark:text-gray-300 text-sm text-left">
-        {label}
-      </label>
+      <div className="flex flex-col items-start lg:flex-row lg:items-center justify-start gap-2">
+        <label className="text-gray-600 dark:text-gray-300 text-sm text-left">
+          {label}
+        </label>
+        {description && (
+          <span className="text-gray-500 dark:text-gray-400 text-xs">
+            {description}
+          </span>
+        )}
+      </div>
       <div className="flex flex-col w-full py-2 flex-grow md:py-3 md:pl-4 relative border border-black/10 bg-white dark:border-gray-900/50 dark:text-white dark:bg-gray-700 rounded-md shadow-[0_0_10px_rgba(0,0,0,0.10)] dark:shadow-[0_0_15px_rgba(0,0,0,0.10)]">
         {children}
       </div>
