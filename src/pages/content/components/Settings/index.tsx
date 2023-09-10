@@ -1,6 +1,8 @@
 import { Tab } from "@headlessui/react";
 import { ACCEPTED_FILE_TYPES, PACKAGE_VERSION } from "@src/helpers/constants";
+import useGoogleAnalytics from "@src/hooks/useGoogleAnalytics";
 import classnames from "classnames";
+import { useEffect } from "react";
 import { Fragment, useState } from "react";
 import { SettingsIcon } from "../Icons/SettingsIcon";
 import Modal from "../Modal";
@@ -47,9 +49,16 @@ const Settings = ({
   setMultipleFilesUpPrompt,
 }: SettingsProps) => {
   const [openModal, setOpenModal] = useState(false);
-
   const [ignoreExtensionsInput, setIgnoreExtensionsInput] = useState("");
   const [blacklistInput, setBlacklistInput] = useState("");
+
+  const { fireEvent } = useGoogleAnalytics();
+
+  useEffect(() => {
+    if (openModal) {
+      fireEvent("settings_shown", {});
+    }
+  }, []);
 
   return (
     <>

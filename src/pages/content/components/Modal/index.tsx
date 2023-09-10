@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import CloseIcon from "../Icons/CloseIcon";
+import BuyMeACoffee from "../BuyMeACoffee";
 
 interface ModalProps {
   title: string;
@@ -58,21 +59,7 @@ const Modal = ({ title, children, openModal, setOpenModal }: ModalProps) => {
                     transform: "translateX(-50%)",
                   }}
                 >
-                  <a
-                    href="https://www.buymeacoffee.com/aliburakozden"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <img
-                      src="https://cdn.buymeacoffee.com/buttons/v2/default-red.png"
-                      alt="Buy Me A Coffee"
-                      style={{
-                        height: 40,
-                        width: 140,
-                        objectFit: "contain",
-                      }}
-                    />
-                  </a>
+                  <BuyMeACoffee referrer="settings" />
                   {/* <span className="text-gray-600 dark:text-gray-300 text-xs">
                     If you like this tool, you can support me with a coffee ☕
                   </span> */}

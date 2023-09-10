@@ -1,5 +1,6 @@
 export const DEFAULT_CHUNCK_SIZE = 10000;
 export const WAIT_TIME = 1000;
+export const PACKAGE_VERSION = "1.4.2";
 
 export const BASE_PROMPT = "";
 
@@ -39,8 +40,6 @@ export const ZIP_IGNORE_EXTENSION = [
   ".yaml",
   ".log",
 ];
-
-export const PACKAGE_VERSION = "1.4.1";
 
 export const IMAGE_FILE_TYPES = /image\/(png|jpg|jpeg|bmp|webp)/;
 

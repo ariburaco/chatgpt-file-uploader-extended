@@ -20,6 +20,7 @@ import {
   readImageFiles,
 } from "@src/helpers/filereaders";
 import { useEffect, useRef, useState } from "react";
+import useGoogleAnalytics from "./useGoogleAnalytics";
 
 const useFileUploader = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -48,6 +49,8 @@ const useFileUploader = () => {
 
   const isStopRequestedRef = useRef(false);
   const [isStopRequested, setIsStopRequested] = useState(false);
+
+  const { fireEvent, fireErrorEvent } = useGoogleAnalytics();
 
   const getSettingsFromLocalStorage = async () => {
     const localChunkSize = await getFromLocalStorage<string>(
@@ -150,33 +153,50 @@ const useFileUploader = () => {
     await getSettingsFromLocalStorage();
     setIsSubmitting(true);
     setIsStopRequested(false);
-
     let fileContent = "";
-    if (file.type === "application/pdf") {
-      fileContent = await readPdfFile(file);
-    } else if (
-      file.type ===
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ) {
-      fileContent = await readWordFile(file);
-    } else if (
-      file.type ===
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    ) {
-      fileContent = await readExcelFile(file);
-    } else if (file.type === "application/zip") {
-      fileContent = await readFilesFromZIPFile(
-        file,
-        blacklist,
-        ignoreExtensions
-      );
-    } else if (IMAGE_FILE_TYPES.exec(file.type)) {
-      fileContent = await readImageFiles(file);
-    } else if (file.type === "text/plain") {
-      fileContent = await readFileAsText(file);
-    } else {
-      fileContent = await readFileAsText(file);
+    try {
+      if (file.type === "application/pdf") {
+        fileContent = await readPdfFile(file);
+      } else if (
+        file.type ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ) {
+        fileContent = await readWordFile(file);
+      } else if (
+        file.type ===
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      ) {
+        fileContent = await readExcelFile(file);
+      } else if (file.type === "application/zip") {
+        fileContent = await readFilesFromZIPFile(
+          file,
+          blacklist,
+          ignoreExtensions
+        );
+      } else if (IMAGE_FILE_TYPES.exec(file.type)) {
+        fileContent = await readImageFiles(file);
+      } else if (file.type === "text/plain") {
+        fileContent = await readFileAsText(file);
+      } else {
+        fileContent = await readFileAsText(file);
+      }
+    } catch (error) {
+      console.error(error);
+      const errorMessage = `Error occurred while reading file: ${error}`;
+      fireErrorEvent("file_upload_failed", {
+        error_message: errorMessage,
+        file_type: file.type,
+      });
+      setIsSubmitting(false);
+      setFile(null);
+      setFileName("");
+      setTotalParts(0);
+      return;
     }
+
+    fireEvent("file_uploaded", {
+      file_type: file.type,
+    });
 
     await handleFileContent(fileContent);
   }
@@ -254,6 +274,12 @@ ${promptPart}
     const numChunks = Math.ceil(fileContent.length / chunkSize);
     setTotalParts(numChunks);
 
+    fireEvent("file_content_read", {
+      file_size: fileContent.length.toString(),
+      chunk_size: chunkSize.toString(),
+      num_chunks: numChunks.toString(),
+    });
+
     async function processChunk(i: number) {
       if (i < numChunks && !isStopRequestedRef.current) {
         const start = i * chunkSize;
@@ -274,6 +300,9 @@ ${promptPart}
           );
 
           if (isStopRequestedRef.current) {
+            fireEvent("file_upload_cancelled", {
+              stopped_at_part: part.toString(),
+            });
             break;
           }
         }
@@ -327,6 +356,7 @@ ${promptPart}
   const onUploadButtonClick = () => {
     if (!isSubmitting) {
       fileInputRef.current?.click();
+      fireEvent("upload_button_clicked", {});
     }
   };
 
