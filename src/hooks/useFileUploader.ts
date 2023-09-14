@@ -30,6 +30,7 @@ const useFileUploader = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [currentPart, setCurrentPart] = useState<number>(0);
   const [totalParts, setTotalParts] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
 
   const [basePrompt, setBasePrompt] = useState<string>(BASE_PROMPT);
   const [singleFilePrompt, setSingleFilePrompt] =
@@ -50,39 +51,33 @@ const useFileUploader = () => {
   const isStopRequestedRef = useRef(false);
   const [isStopRequested, setIsStopRequested] = useState(false);
 
-  const { fireEvent, fireErrorEvent } = useGoogleAnalytics();
+  const { fireEvent } = useGoogleAnalytics();
 
   const getSettingsFromLocalStorage = async () => {
-    const localChunkSize = await getFromLocalStorage<string>(
-      "chatGPTFileUploader_chunkSize"
-    );
+    const localChunkSize = await getFromLocalStorage<string>("chunkSize");
 
-    const localBasePrompt = await getFromLocalStorage<string>(
-      "chatGPTFileUploader_basePrompt"
-    );
+    const localBasePrompt = await getFromLocalStorage<string>("basePrompt");
 
     const localSingleFilePrompt = await getFromLocalStorage<string>(
-      "chatGPTFileUploader_singleFilePrompt"
+      "singleFilePrompt"
     );
 
     const localMultipleFilesPrompt = await getFromLocalStorage<string>(
-      "chatGPTFileUploader_multipleFilesPrompt"
+      "multipleFilesPrompt"
     );
 
     const localLastPartPrompt = await getFromLocalStorage<string>(
-      "chatGPTFileUploader_lastPartPrompt"
+      "lastPartPrompt"
     );
 
     const localMultipleFilesUpPrompt = await getFromLocalStorage<string>(
-      "chatGPTFileUploader_multipleFilesUpPrompt"
+      "multipleFilesUpPrompt"
     );
 
-    const localBlacklist = await getFromLocalStorage<string>(
-      "chatGPTFileUploader_blacklist"
-    );
+    const localBlacklist = await getFromLocalStorage<string>("blacklist");
 
     const localIgnoreExtensions = await getFromLocalStorage<string>(
-      "chatGPTFileUploader_ignoreExtensions"
+      "ignoreExtensions"
     );
 
     if (localBlacklist) {
@@ -119,40 +114,25 @@ const useFileUploader = () => {
   };
 
   const updateLocalStorageSettings = async () => {
-    await saveToLocalStorage("chatGPTFileUploader_basePrompt", basePrompt);
-    await saveToLocalStorage(
-      "chatGPTFileUploader_singleFilePrompt",
-      singleFilePrompt
-    );
-    await saveToLocalStorage(
-      "chatGPTFileUploader_multipleFilesPrompt",
-      multipleFilesPrompt
-    );
-    await saveToLocalStorage(
-      "chatGPTFileUploader_lastPartPrompt",
-      lastPartPrompt
-    );
-    await saveToLocalStorage(
-      "chatGPTFileUploader_multipleFilesUpPrompt",
-      multipleFilesUpPrompt
-    );
+    await saveToLocalStorage("basePrompt", basePrompt);
+    await saveToLocalStorage("singleFilePrompt", singleFilePrompt);
+    await saveToLocalStorage("multipleFilesPrompt", multipleFilesPrompt);
+    await saveToLocalStorage("lastPartPrompt", lastPartPrompt);
+    await saveToLocalStorage("multipleFilesUpPrompt", multipleFilesUpPrompt);
   };
 
   const updateBlackListAndIgnoreExtensions = async () => {
-    await saveToLocalStorage(
-      "chatGPTFileUploader_blacklist",
-      blacklist.join(",")
-    );
-    await saveToLocalStorage(
-      "chatGPTFileUploader_ignoreExtensions",
-      ignoreExtensions.join(",")
-    );
+    await saveToLocalStorage("blacklist", blacklist.join(","));
+    await saveToLocalStorage("ignoreExtensions", ignoreExtensions.join(","));
   };
 
   async function handleSubmission(file: File) {
     await getSettingsFromLocalStorage();
     setIsSubmitting(true);
+
     setIsStopRequested(false);
+    setTotalParts(0);
+    setCurrentPart(0);
     let fileContent = "";
     try {
       if (file.type === "application/pdf") {
@@ -183,22 +163,28 @@ const useFileUploader = () => {
     } catch (error) {
       console.error(error);
       const errorMessage = `Error occurred while reading file: ${error}`;
-      fireErrorEvent("file_upload_failed", {
+      setError(errorMessage);
+      fireEvent("file_select_error", {
         error_message: errorMessage,
         file_type: file.type,
       });
-      setIsSubmitting(false);
-      setFile(null);
-      setFileName("");
-      setTotalParts(0);
+      clearState();
       return;
     }
 
-    fireEvent("file_uploaded", {
-      file_type: file.type,
-    });
-
-    await handleFileContent(fileContent);
+    try {
+      await handleFileContent(fileContent);
+    } catch (error) {
+      console.error(error);
+      const errorMessage = `Error occurred while submitting file: ${error}`;
+      setError(errorMessage);
+      fireEvent("file_upload_failed", {
+        error_message: errorMessage,
+        file_type: file.type,
+      });
+      clearState();
+      return;
+    }
   }
 
   const setTextareaValue = (
@@ -228,6 +214,11 @@ const useFileUploader = () => {
     const textarea = document.getElementById(
       "prompt-textarea"
     ) as HTMLTextAreaElement;
+
+    if (!textarea) {
+      setError("Could not find the prompt textarea");
+      return;
+    }
 
     setTextareaValue(textarea, value); // set the new value
 
@@ -273,12 +264,7 @@ ${promptPart}
   const handleFileContent = async (fileContent: string) => {
     const numChunks = Math.ceil(fileContent.length / chunkSize);
     setTotalParts(numChunks);
-
-    fireEvent("file_content_read", {
-      file_size: fileContent.length.toString(),
-      chunk_size: chunkSize.toString(),
-      num_chunks: numChunks.toString(),
-    });
+    const maxTries = 20; // Set max tries to 20
 
     async function processChunk(i: number) {
       if (i < numChunks && !isStopRequestedRef.current) {
@@ -286,18 +272,21 @@ ${promptPart}
         const end = start + chunkSize;
         const chunk = fileContent.slice(start, end);
         const part = i + 1;
-        // Submit chunk to conversation
-        await new Promise((resolve) => setTimeout(resolve, WAIT_TIME));
-        await submitConversation(chunk, part, i === numChunks - 1, numChunks);
 
+        // Submit chunk to conversation
+        await submitConversation(chunk, part, i === numChunks - 1, numChunks);
+        await wait();
         setCurrentPart(part);
         let chatgptReady = false;
+        let currentTry = 0; // Initialize the counter
+
         while (!chatgptReady && !isStopRequestedRef.current) {
-          await new Promise((resolve) => setTimeout(resolve, WAIT_TIME));
-          console.log("Waiting for chatgpt to be ready...");
+          await wait();
+          console.warn("Waiting for chatgpt to be ready...");
           chatgptReady = !document.querySelector(
             ".text-2xl > span:not(.invisible)"
           );
+          currentTry += 1; // Increment the counter
 
           if (isStopRequestedRef.current) {
             fireEvent("file_upload_cancelled", {
@@ -307,19 +296,34 @@ ${promptPart}
           }
         }
 
+        if (currentTry >= maxTries) {
+          console.error("Max tries exceeded. Exiting...");
+          setError("Max tries exceeded. Exiting...");
+          clearState();
+          return; // Exit the function or handle this case appropriately
+        }
+
         if (!isStopRequestedRef.current) {
           processChunk(i + 1); // Process the next chunk
         }
       } else {
-        setIsSubmitting(false);
-        setFile(null);
-        setFileName("");
-        setTotalParts(0);
+        clearState();
       }
     }
 
     processChunk(0); // Start the process with the first chunk
   };
+
+  const clearState = () => {
+    setIsSubmitting(false);
+    setFile(null);
+    setFileName("");
+    setTotalParts(0);
+    setCurrentPart(0);
+  };
+
+  const wait = (ms?: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms ?? WAIT_TIME));
 
   const readFileAsText = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -361,22 +365,26 @@ ${promptPart}
   };
 
   async function onChunkSizeChange(value: string) {
-    let parsedValue = parseInt(value);
+    try {
+      let parsedValue = parseInt(value);
 
-    if (isNaN(parsedValue)) {
-      return;
+      if (isNaN(parsedValue)) {
+        return;
+      }
+
+      if (parsedValue < 1) {
+        parsedValue = 1;
+      }
+
+      if (parsedValue > 99999) {
+        parsedValue = 99999;
+      }
+
+      await saveToLocalStorage("chunkSize", parsedValue);
+      setChunkSize(parsedValue);
+    } catch (error) {
+      setChunkSize(DEFAULT_CHUNCK_SIZE);
     }
-
-    if (parsedValue < 1) {
-      parsedValue = 1;
-    }
-
-    if (parsedValue > 99999) {
-      parsedValue = 99999;
-    }
-
-    await saveToLocalStorage("chatGPTFileUploader_chunkSize", parsedValue);
-    setChunkSize(parsedValue);
   }
 
   useEffect(() => {
@@ -403,6 +411,20 @@ ${promptPart}
       setChunkSize(DEFAULT_CHUNCK_SIZE);
     }
   }, [chunkSize]);
+
+  useEffect(() => {
+    if (error) {
+      const metrics = {
+        file_type: file?.type || "",
+        file_name: fileName,
+      };
+
+      fireEvent("file_upload_failed", {
+        error_message: error,
+        ...metrics,
+      });
+    }
+  }, [error]);
 
   return {
     file,

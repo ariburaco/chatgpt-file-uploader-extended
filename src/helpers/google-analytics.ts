@@ -4,11 +4,8 @@ import { getFromLocalStorage, saveToLocalStorage } from ".";
 const GA_ENDPOINT = "https://www.google-analytics.com/mp/collect";
 const GA_DEBUG_ENDPOINT = "https://www.google-analytics.com/debug/mp/collect";
 
-const MEASUREMENT_ID = "G-D7TJQY6BR7";
-const API_SECRET = "W-VtokkOSnecKKNnJ-GMYQ";
-
-// const MEASUREMENT_ID = "YOUR_MEASUREMENT_ID_HERE";
-// const API_SECRET = "YOUR_API_SECRET_HERE";
+const MEASUREMENT_ID = "YOUR_MEASUREMENT_ID_HERE";
+const API_SECRET = "YOUR_API_SECRET_HERE";
 
 const DEFAULT_ENGAGEMENT_TIME_MSEC = 100;
 const SESSION_EXPIRATION_IN_MIN = 30;
@@ -115,16 +112,6 @@ export class Analytics {
     return this.fireEvent("page_view", {
       page_title: pageTitle,
       page_location: pageLocation,
-      ...additionalParams,
-    });
-  }
-
-  public async fireErrorEvent(
-    error: any,
-    additionalParams: EventParams = {}
-  ): Promise<void> {
-    return this.fireEvent("extension_error", {
-      ...error,
       ...additionalParams,
     });
   }

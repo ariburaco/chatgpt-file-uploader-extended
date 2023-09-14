@@ -1,3 +1,5 @@
+import { EXTENSION_PREFIX } from "./constants";
+
 export const convertBlobToBase64 = (blob: Blob): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -13,13 +15,15 @@ export const saveToLocalStorage = async <T>(
   key: string,
   value: T
 ): Promise<void> => {
-  await chrome.storage.local.set({ [key]: value });
+  const prefixedValue = `${EXTENSION_PREFIX}_${key}`;
+  await chrome.storage.local.set({ [prefixedValue]: value });
 };
 
 export const getFromLocalStorage = <T>(key: string): Promise<T | undefined> => {
   return new Promise((resolve) => {
-    chrome.storage.local.get([key], (result) => {
-      resolve(result[key] as T);
+    const prefixedKey = `${EXTENSION_PREFIX}_${key}`;
+    chrome.storage.local.get([prefixedKey], (result) => {
+      resolve(result[prefixedKey] as T);
     });
   });
 };

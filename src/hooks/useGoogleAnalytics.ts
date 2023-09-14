@@ -24,19 +24,7 @@ const useGoogleAnalytics = () => {
     []
   );
 
-  const fireErrorEvent = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async (error: any, additionalParams: Record<string, string>) => {
-      try {
-        Analytics.fireErrorEvent(error, additionalParams);
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    []
-  );
-
-  return { fireEvent, firePageViewEvent, fireErrorEvent };
+  return { fireEvent, firePageViewEvent };
 };
 
 export default useGoogleAnalytics;

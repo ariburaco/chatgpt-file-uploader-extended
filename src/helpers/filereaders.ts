@@ -1,11 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as PDFJS from "pdfjs-dist";
-PDFJS.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS.version}/pdf.worker.js`;
+// PDFJS.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS.version}/pdf.worker.js`;
+// cdnjs.cloudflare.com_ajax_libs_pdf.js_3.9.179_pdf.worker.js
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
+import PDFJSWorker from "pdfjs-dist/legacy/build/pdf.worker.entry";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJSWorker;
 
 import OCRImage from "@src/helpers/OCRImage";
 import { IMAGE_FILE_EXTENSIONS } from "@src/helpers/constants";
 import JSZip from "jszip";
-import { getDocument } from "pdfjs-dist";
+import { getDocument, version } from "pdfjs-dist";
 import { read, utils } from "xlsx";
 
 const readImageFiles = async (file: File | Blob) => {

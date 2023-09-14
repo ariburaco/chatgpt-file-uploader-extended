@@ -1,3 +1,4 @@
+import { EXTENSION_PREFIX } from "@src/helpers/constants";
 import useGoogleAnalytics from "@src/hooks/useGoogleAnalytics";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useState } from "react";
@@ -17,7 +18,7 @@ const Popup: React.FC<PopupProps> = ({ title, children }) => {
 
   const checkPopupClosed = async () => {
     const isPopupClosed = localStorage.getItem(
-      "chatGPTFileUploader_isPopupClosed"
+      `${EXTENSION_PREFIX}_isPopupClosed`
     );
 
     const popupShown = isPopupClosed === "false" || isPopupClosed === null;
@@ -27,7 +28,7 @@ const Popup: React.FC<PopupProps> = ({ title, children }) => {
 
   const onPopupClose = async () => {
     setShowPopup(false);
-    localStorage.setItem("chatGPTFileUploader_isPopupClosed", "true");
+    localStorage.setItem(`${EXTENSION_PREFIX}_isPopupClosed`, "true");
     fireEvent("popup_closed", {});
   };
 
