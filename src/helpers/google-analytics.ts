@@ -10,7 +10,7 @@ const API_SECRET = "YOUR_API_SECRET_HERE";
 const DEFAULT_ENGAGEMENT_TIME_MSEC = 100;
 const SESSION_EXPIRATION_IN_MIN = 30;
 
-interface SessionData {
+export interface SessionData {
   session_id: string;
   timestamp: string;
 }

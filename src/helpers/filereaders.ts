@@ -1,37 +1,39 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// PDFJS.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS.version}/pdf.worker.js`;
-// cdnjs.cloudflare.com_ajax_libs_pdf.js_3.9.179_pdf.worker.js
+/* eslint-disable no-async-promise-executor */
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
 import PDFJSWorker from "pdfjs-dist/legacy/build/pdf.worker.entry";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJSWorker;
 
-import OCRImage from "@src/helpers/OCRImage";
-import { IMAGE_FILE_EXTENSIONS } from "@src/helpers/constants";
 import JSZip from "jszip";
-import { getDocument, version } from "pdfjs-dist";
+import { getDocument } from "pdfjs-dist";
 import { read, utils } from "xlsx";
 
-const readImageFiles = async (file: File | Blob) => {
-  const imagaData = await readFileAsBase64(file);
-  const ocrImage = new OCRImage(imagaData);
-  const text = await ocrImage.getText();
-  return text;
-};
+// const readImageFiles = async (file: File | Blob): Promise<string> => {
+//   return new Promise<string>(async (resolve, reject) => {
+//     try {
+//       const imagaData = await readFileAsBase64(file);
+//       const ocrImage = new OCRImage(imagaData);
+//       const text = await ocrImage.getText();
+//       resolve(text);
+//     } catch (error) {
+//       reject(error);
+//     }
+//   });
+// };
 
-const readFileAsBase64 = (file: File | Blob): Promise<string> => {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = async (event: ProgressEvent<FileReader>) => {
-      const base64 = event.target?.result as string;
-      resolve(base64);
-    };
-    reader.onerror = (event: ProgressEvent<FileReader>) => {
-      reject(event.target?.error);
-    };
-    reader.readAsDataURL(file);
-  });
-};
+// const readFileAsBase64 = (file: File | Blob): Promise<string> => {
+//   return new Promise<string>((resolve, reject) => {
+//     const reader = new FileReader();
+//     reader.onload = async (event: ProgressEvent<FileReader>) => {
+//       const base64 = event.target?.result as string;
+//       resolve(base64);
+//     };
+//     reader.onerror = (event: ProgressEvent<FileReader>) => {
+//       reject(event.target?.error);
+//     };
+//     reader.readAsDataURL(file);
+//   });
+// };
 
 function readWordFile(file: File | Blob): Promise<string> {
   return new Promise<string>((resolve, reject) => {
@@ -101,8 +103,6 @@ const readFilesFromZIPFile = async (
           fileContent = await readWordFile(fileContentAsBlob);
         } else if (fileExtension === ".xlsx") {
           fileContent = await readExcelFile(fileContentAsBlob);
-        } else if (IMAGE_FILE_EXTENSIONS.includes(fileExtension)) {
-          fileContent = await readImageFiles(fileContentAsBlob);
         } else {
           fileContent = await file.async("string");
         }
@@ -194,14 +194,14 @@ const readPdfFile = async (file: File | Blob): Promise<string> => {
             try {
               const page = await pdf.getPage(i);
               const text = await page.getTextContent();
-              textContent += `Page ${i}:\n`;
               textContent += text.items.map((item: any) => item.str).join(" ");
-              textContent += "\n\n";
             } catch (error) {
               console.log(`Error occurred while reading page ${i}: ${error}`);
               continue;
             }
           }
+
+          pdf.destroy();
 
           resolve(textContent);
         } catch (error) {
@@ -218,10 +218,4 @@ const readPdfFile = async (file: File | Blob): Promise<string> => {
   });
 };
 
-export {
-  readFilesFromZIPFile,
-  readPdfFile,
-  readWordFile,
-  readExcelFile,
-  readImageFiles,
-};
+export { readFilesFromZIPFile, readPdfFile, readWordFile, readExcelFile };

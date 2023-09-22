@@ -2,13 +2,14 @@ import { Tab } from "@headlessui/react";
 import { ACCEPTED_FILE_TYPES, PACKAGE_VERSION } from "@src/helpers/constants";
 import useGoogleAnalytics from "@src/hooks/useGoogleAnalytics";
 import classnames from "classnames";
-import { useEffect } from "react";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { SettingsIcon } from "../Icons/SettingsIcon";
 import Modal from "../Modal";
+import SendEmailToMe from "../SendEmailToMe";
 
 interface SettingsProps {
   chunkSize: number;
+  overlapSize: number;
   basePrompt: string;
   singleFilePrompt: string;
   multipleFilesPrompt: string;
@@ -22,6 +23,7 @@ interface SettingsProps {
   setLastPartPrompt: (prompt: string) => void;
   setBasePrompt: (prompt: string) => void;
   onChunkSizeChange: (chunkSize: string) => void;
+  onOverlapSizeChange: (overlapSize: string) => void;
   updateLocalStorageSettings: () => void;
   setBlacklist: (blacklist: string[]) => void;
   setIgnoreExtensions: (ignoreExtensions: string[]) => void;
@@ -47,6 +49,8 @@ const Settings = ({
   updateBlackListAndIgnoreExtensions,
   multipleFilesUpPrompt,
   setMultipleFilesUpPrompt,
+  onOverlapSizeChange,
+  overlapSize,
 }: SettingsProps) => {
   const [openModal, setOpenModal] = useState(false);
   const [ignoreExtensionsInput, setIgnoreExtensionsInput] = useState("");
@@ -128,6 +132,19 @@ const Settings = ({
                   </button>
                 )}
               </Tab>
+              <Tab as={Fragment}>
+                {({ selected }) => (
+                  /* Use the `selected` state to conditionally style the selected tab. */
+                  <button
+                    className={classnames(
+                      "py-2 px-4 rounded-md bg-gray-100 dark:bg-gray-800",
+                      selected ? "text-green-500" : "text-gray-500"
+                    )}
+                  >
+                    Contact
+                  </button>
+                )}
+              </Tab>
             </Tab.List>
             <Tab.Panels>
               <Tab.Panel>
@@ -141,6 +158,18 @@ const Settings = ({
                       placeholder="Enter number of chunk size"
                       value={chunkSize}
                       onChange={(e) => onChunkSizeChange(e.target.value)}
+                    />
+                  </Row>
+                  <Row
+                    isNewFeature
+                    label="Overlap Size"
+                    description="The character count of the overlap between each part. It is used to make the generated text more coherent."
+                  >
+                    <input
+                      className="m-0 w-full resize-none border-0 bg-transparent p-0 pr-7 focus:ring-0 focus-visible:ring-0 dark:bg-transparent pl-2 md:pl-0"
+                      placeholder="Enter number of overlap size"
+                      value={overlapSize}
+                      onChange={(e) => onOverlapSizeChange(e.target.value)}
                     />
                   </Row>
                   <Divider />
@@ -386,6 +415,9 @@ const Settings = ({
                   <Divider />
                 </div>
               </Tab.Panel>
+              <Tab.Panel>
+                <SendEmailToMe />
+              </Tab.Panel>
             </Tab.Panels>
           </Tab.Group>
         </div>
@@ -396,27 +428,36 @@ const Settings = ({
 
 export default Settings;
 
-const Divider = () => {
+export const Divider = () => {
   return (
     <div className="w-full border-b border-black/10 dark:border-white/10" />
   );
 };
 
-const Row = ({
+export const Row = ({
   label,
   children,
   description,
+  isNewFeature,
 }: {
   label: string;
   description?: string;
   children: React.ReactNode;
+  isNewFeature?: boolean;
 }) => {
   return (
     <div className="col-span-1 flex flex-col gap-2 items-start justify-start w-full">
       <div className="flex flex-col items-start lg:flex-row lg:items-center justify-start gap-2">
-        <label className="text-gray-600 dark:text-gray-300 text-sm text-left">
-          {label}
-        </label>
+        <div className="flex flex-row items-center justify-start gap-2">
+          <label className="text-gray-600 dark:text-gray-300 text-sm text-left">
+            {label}
+          </label>
+          {isNewFeature && (
+            <span className="px-1 bg-green-500 text-gray-800 rounded-full text-xs">
+              New
+            </span>
+          )}
+        </div>
         {description && (
           <span className="text-gray-500 dark:text-gray-400 text-xs">
             {description}

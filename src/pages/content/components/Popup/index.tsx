@@ -23,7 +23,6 @@ const Popup: React.FC<PopupProps> = ({ title, children }) => {
 
     const popupShown = isPopupClosed === "false" || isPopupClosed === null;
     setShowPopup(popupShown);
-    fireEvent(popupShown ? "popup_shown" : "popup_closed", {});
   };
 
   const onPopupClose = async () => {

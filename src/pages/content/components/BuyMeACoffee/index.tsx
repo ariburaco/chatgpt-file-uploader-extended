@@ -28,7 +28,7 @@ const BuyMeACoffee = ({ referrer }: BuyMeACoffeeProps) => {
 
   return (
     <a
-      href="https://www.buymeacoffee.com/aliburakozden"
+      href={`https://www.buymeacoffee.com/aliburakozden?ref=chatgpt-file-uploader-extension-${referrer}`}
       target="_blank"
       rel="noreferrer"
       className="hover:opacity-80 transition-all"

@@ -11,16 +11,19 @@ import {
   ZIP_IGNORE_EXTENSION,
   MULTI_PART_FILE_UPLOAD_PROMPT,
   WAIT_TIME,
+  DEFAULT_OVERLAP_SIZE,
 } from "@src/helpers/constants";
 import {
   readPdfFile,
   readWordFile,
   readExcelFile,
   readFilesFromZIPFile,
-  readImageFiles,
 } from "@src/helpers/filereaders";
 import { useEffect, useRef, useState } from "react";
 import useGoogleAnalytics from "./useGoogleAnalytics";
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { Document } from "langchain/document";
+import { toast } from "react-hot-toast";
 
 const useFileUploader = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -50,11 +53,14 @@ const useFileUploader = () => {
 
   const isStopRequestedRef = useRef(false);
   const [isStopRequested, setIsStopRequested] = useState(false);
+  const [overlapSize, setOverlapSize] = useState(DEFAULT_OVERLAP_SIZE);
 
   const { fireEvent } = useGoogleAnalytics();
 
   const getSettingsFromLocalStorage = async () => {
     const localChunkSize = await getFromLocalStorage<string>("chunkSize");
+
+    const localOverlapSize = await getFromLocalStorage<number>("overlapSize");
 
     const localBasePrompt = await getFromLocalStorage<string>("basePrompt");
 
@@ -111,6 +117,10 @@ const useFileUploader = () => {
     if (localMultipleFilesUpPrompt) {
       setMultipleFilesUpPrompt(localMultipleFilesUpPrompt);
     }
+
+    if (localOverlapSize) {
+      setOverlapSize(localOverlapSize);
+    }
   };
 
   const updateLocalStorageSettings = async () => {
@@ -154,7 +164,10 @@ const useFileUploader = () => {
           ignoreExtensions
         );
       } else if (IMAGE_FILE_TYPES.exec(file.type)) {
-        fileContent = await readImageFiles(file);
+        fileContent = "";
+        toast.error("Image files are not supported anymore.");
+        clearState();
+        return;
       } else if (file.type === "text/plain") {
         fileContent = await readFileAsText(file);
       } else {
@@ -163,6 +176,19 @@ const useFileUploader = () => {
     } catch (error) {
       console.error(error);
       const errorMessage = `Error occurred while reading file: ${error}`;
+      setError(errorMessage);
+      fireEvent("file_select_error", {
+        error_message: errorMessage,
+        file_type: file.type,
+      });
+      clearState();
+      return;
+    }
+
+    if (fileContent.length === 0 || fileContent === "") {
+      const errorMessage = "File content is empty. Aborting...";
+      toast.error(errorMessage);
+
       setError(errorMessage);
       fireEvent("file_select_error", {
         error_message: errorMessage,
@@ -250,27 +276,43 @@ const useFileUploader = () => {
         : splittedPrompt;
     const promptFilename = `Filename: ${fileName || "Unknown"}`;
     const promptPart = `Part ${part} of ${totalParts}:`;
-    const promptText = `${text}`;
+    const prompt = `
+${prePrompt}
 
-    const prompt = `${prePrompt}
 ${promptFilename} 
-${promptPart} 
+${promptPart}
 
-"${promptText}"`;
+${text}`;
 
-    await simulateEnterKey(prompt);
+    await simulateEnterKey(prompt.trim());
   }
+
+  const splitToDocuments = async (
+    text: string,
+    chunkSize: number
+  ): Promise<string[]> => {
+    const splitter = new RecursiveCharacterTextSplitter({
+      chunkSize: chunkSize ?? DEFAULT_CHUNCK_SIZE,
+      chunkOverlap: overlapSize ?? DEFAULT_OVERLAP_SIZE,
+    });
+
+    const docOutput = await splitter.splitDocuments([
+      new Document({ pageContent: text }),
+    ]);
+
+    return docOutput.map((doc) => doc.pageContent);
+  };
 
   const handleFileContent = async (fileContent: string) => {
     const numChunks = Math.ceil(fileContent.length / chunkSize);
     setTotalParts(numChunks);
     const maxTries = 20; // Set max tries to 20
 
+    const splittedDocuments = await splitToDocuments(fileContent, chunkSize);
+
     async function processChunk(i: number) {
       if (i < numChunks && !isStopRequestedRef.current) {
-        const start = i * chunkSize;
-        const end = start + chunkSize;
-        const chunk = fileContent.slice(start, end);
+        const chunk = splittedDocuments[i];
         const part = i + 1;
 
         // Submit chunk to conversation
@@ -282,7 +324,6 @@ ${promptPart}
 
         while (!chatgptReady && !isStopRequestedRef.current) {
           await wait();
-          console.warn("Waiting for chatgpt to be ready...");
           chatgptReady = !document.querySelector(
             ".text-2xl > span:not(.invisible)"
           );
@@ -387,6 +428,29 @@ ${promptPart}
     }
   }
 
+  async function onOverlapSizeChange(value: string) {
+    try {
+      let parsedValue = parseInt(value);
+
+      if (isNaN(parsedValue)) {
+        return;
+      }
+
+      if (parsedValue < 1) {
+        parsedValue = 1;
+      }
+
+      if (parsedValue > 99999) {
+        parsedValue = 99999;
+      }
+
+      await saveToLocalStorage("overlapSize", parsedValue);
+      setOverlapSize(parsedValue);
+    } catch (error) {
+      setOverlapSize(DEFAULT_OVERLAP_SIZE);
+    }
+  }
+
   useEffect(() => {
     isStopRequestedRef.current = isStopRequested;
     if (isStopRequested) {
@@ -455,6 +519,8 @@ ${promptPart}
     handleFileInput,
     multipleFilesUpPrompt,
     setMultipleFilesUpPrompt,
+    overlapSize,
+    onOverlapSizeChange,
   };
 };
 

@@ -1,7 +1,11 @@
 export const DEFAULT_CHUNCK_SIZE = 10000;
+export const DEFAULT_OVERLAP_SIZE = 100;
+
 export const WAIT_TIME = 1000;
-export const PACKAGE_VERSION = "1.4.3";
+export const PACKAGE_VERSION = "1.5.0";
 export const EXTENSION_PREFIX = "chatGPTFileUploader";
+export const EMAIL_ENDPOINT = "https://www.mystickynotes.net/api/contact-me";
+
 export const BASE_PROMPT = "";
 
 export const SINGLE_FILE_PROMPT = `${BASE_PROMPT} The complete document is provided below. After reviewing the document, please respond with "I have finished reviewing the document and I'm ready to assist you with your inquiries."`;

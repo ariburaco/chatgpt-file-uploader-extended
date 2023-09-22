@@ -45,7 +45,11 @@ const Modal = ({ title, children, openModal, setOpenModal }: ModalProps) => {
               role="dialog"
               aria-modal="true"
               aria-labelledby="modal-headline"
-              style={{ maxWidth: "80vw", maxHeight: "90vh", top: "6vh" }}
+              style={{
+                maxWidth: "80vw",
+                height: "90vh",
+                top: "6vh",
+              }}
             >
               <div className="gap-2 px-4 pb-4 pt-5 sm:p-6 flex items-center justify-between border-b border-black/10 dark:border-white/10 ">
                 <h3 className="text-lg leading-6 font-medium text-gray-600 dark:text-gray-300">

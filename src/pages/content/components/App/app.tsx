@@ -1,12 +1,13 @@
 import useFileUploader from "@src/hooks/useFileUploader";
-import ProgressBar from "../ProgressBar";
-import Settings from "../Settings";
+import useGoogleAnalytics from "@src/hooks/useGoogleAnalytics";
+import { useEffect } from "react";
+import { Toaster } from "react-hot-toast";
+import BuyMeACoffee from "../BuyMeACoffee";
 import StopIcon from "../Icons/StopIcon";
 import UploadIcon from "../Icons/UploadIcon";
 import Popup from "../Popup";
-import BuyMeACoffee from "../BuyMeACoffee";
-import useGoogleAnalytics from "@src/hooks/useGoogleAnalytics";
-import { useEffect } from "react";
+import ProgressBar from "../ProgressBar";
+import Settings from "../Settings";
 
 export default function App() {
   const {
@@ -36,6 +37,8 @@ export default function App() {
     handleFileInput,
     multipleFilesUpPrompt,
     setMultipleFilesUpPrompt,
+    overlapSize,
+    onOverlapSizeChange,
   } = useFileUploader();
 
   const { firePageViewEvent } = useGoogleAnalytics();
@@ -46,6 +49,8 @@ export default function App() {
 
   return (
     <>
+      <Toaster containerStyle={{ zIndex: 99999 }} />
+
       <Popup title="Wanna make a donation?">
         <div
           className="flex flex-col items-center justify-between gap-6"
@@ -79,7 +84,6 @@ export default function App() {
             ref={fileInputRef}
             style={{ display: "none" }}
             onChange={onFileChange}
-            // accept={ACCEPTED_FILE_TYPES.join(", ")}
             accept="*"
           />
 
@@ -87,6 +91,8 @@ export default function App() {
             <Settings
               onChunkSizeChange={onChunkSizeChange}
               chunkSize={chunkSize}
+              overlapSize={overlapSize}
+              onOverlapSizeChange={onOverlapSizeChange}
               basePrompt={basePrompt}
               singleFilePrompt={singleFilePrompt}
               multipleFilesPrompt={multipleFilesPrompt}

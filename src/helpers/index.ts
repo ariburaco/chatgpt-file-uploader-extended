@@ -49,3 +49,7 @@ export const dataURLToBlob = (dataURL: string) => {
 
   return new Blob([buffer], { type: mimeType });
 };
+
+export const isValidEmail = (email: string) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};

@@ -5,6 +5,7 @@ import makeManifest from "./utils/plugins/make-manifest";
 import customDynamicImport from "./utils/plugins/custom-dynamic-import";
 import addHmr from "./utils/plugins/add-hmr";
 import manifest from "./manifest";
+import { checkEvals, removeEvals } from "./utils/plugins/evals";
 
 const root = resolve(__dirname, "src");
 const pagesDir = resolve(root, "pages");
@@ -31,6 +32,8 @@ export default defineConfig({
     makeManifest(manifest),
     customDynamicImport(),
     addHmr({ background: enableHmrInBackgroundScript, view: true }),
+    removeEvals(),
+    checkEvals(),
   ],
   publicDir,
   build: {
