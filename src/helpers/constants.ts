@@ -2,7 +2,7 @@ export const DEFAULT_CHUNCK_SIZE = 10000;
 export const DEFAULT_OVERLAP_SIZE = 100;
 
 export const WAIT_TIME = 1000;
-export const PACKAGE_VERSION = "1.5.0";
+export const PACKAGE_VERSION = "1.5.1";
 export const EXTENSION_PREFIX = "chatGPTFileUploader";
 export const EMAIL_ENDPOINT = "https://www.mystickynotes.net/api/contact-me";
 
